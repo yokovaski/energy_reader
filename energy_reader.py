@@ -39,7 +39,7 @@ class Reader():
         if os.environ.get("LOCAL") == "True":
             self.public_ip_address = "127.0.0.1"
         else:
-            self.public_ip_address = json.load(urlopen("http://jsonip.com"))["ip"]
+            self.public_ip_address = json.loads(requests.get("http://jsonip.com").text)["ip"]
 
     def set_raspberry_pi_id(self):
         tokenValidation = {
