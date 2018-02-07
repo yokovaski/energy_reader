@@ -144,7 +144,7 @@ class Reader():
             i = 0
 
             for line in content:
-                dataRow = json.loads(str(line).decode('utf-8'))
+                dataRow = json.loads(line.decode('utf-8'))
                 data.append(dataRow)
                 i += 1
 
