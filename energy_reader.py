@@ -52,7 +52,7 @@ class Reader():
         headers = {"Content-type": "application/json", "Accept": "application/json"}
 
         response = requests.post(url, data=json.dumps(tokenValidation), headers=headers)
-        response_data = json.loads(response.content)
+        response_data = json.loads(response.text)
 
         self.raspberry_pi_id = response_data["data"]["id"]
         self.client_id = response_data["data"]["client_id"]
@@ -69,7 +69,7 @@ class Reader():
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
 
         response = requests.post(url, data=token_validation, headers=headers)
-        self.token = "Bearer " + json.loads(response.content)["access_token"].encode("utf-8")
+        self.token = "Bearer " + json.loads(response.text)["access_token"].encode("utf-8")
 
     def file_length(sefl, fileName):
         if not os.path.isfile(fileName):
