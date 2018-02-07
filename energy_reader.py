@@ -144,10 +144,8 @@ class Reader():
                 data.append(dataRow)
                 i += 1
 
-            json_data = json.dumps({'data': data})
-
             try:
-                response = requests.post(self.store_energy_url, data=json_data, headers=headers)
+                response = requests.post(self.store_energy_url, data=json.dumps({'data': data}), headers=headers)
 
                 if response.status_code == requests.codes.created:
                     return
@@ -158,7 +156,7 @@ class Reader():
                     self.send_back_up_data_to_api(headers)
                 else:
                     self.retry = False
-                    self.write_error_to_log(response=response, data_send=json.dumps({'data': [data]}),
+                    self.write_error_to_log(response=response, data_send={'data': data},
                                             url=self.store_energy_url)
                     return
 
@@ -179,7 +177,7 @@ class Reader():
                 self.send_data_to_api(data, headers)
             else:
                 self.retry = False
-                self.write_error_to_log(response=response, data_send=json.dumps({'data': [data]}),
+                self.write_error_to_log(response=response, data_send={'data': [data]},
                                         url=self.store_energy_url)
         except requests.exceptions.ConnectionError:
             self.previous_request_failed = True
