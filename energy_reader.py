@@ -43,9 +43,9 @@ class Reader():
 
     def set_raspberry_pi_id(self):
         tokenValidation = {
-            "key": self.key.encode("utf-8"),
-            "ip_address": self.public_ip_address.encode("utf-8"),
-            "mac_address": self.mac_address.encode("utf-8")
+            "key": self.key,
+            "ip_address": self.public_ip_address,
+            "mac_address": self.mac_address
         }
 
         url = self.base_url + "/v1/raspberrypis"
