@@ -32,6 +32,10 @@ class Reader():
             file = open(self.backup_file, 'w')
             file.close()
 
+        if (self.file_length(self.error_log) < 1):
+            file = open(self.error_log, 'w')
+            file.close()
+
     def set_mac_address(self):
         mac = get_mac()
         self.mac_address = ':'.join(("%012X" % mac)[i:i + 2] for i in range(0, 12, 2))
