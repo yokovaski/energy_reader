@@ -111,6 +111,26 @@ class Reader():
 
         self.send_data_to_api(data, headers)
 
+    def get_data_from_telegram(self, telegram):
+        solar = self.read_solar()
+
+        data = {
+            'raspberry_pi_id': self.raspberry_pi_id,
+            'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
+            'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
+            'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),
+            'solar_now': solar['now'],
+            'usage_total_high': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000),
+            'redelivery_total_high': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000),
+            'usage_total_low': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000),
+            'redelivery_total_low': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000),
+            'solar_total': solar['total'],
+            'usage_gas_now': "0",
+            'usage_gas_total': str(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000)
+        }
+
+        return data
+
     def send_back_up_data_to_api(self, headers):
         with open(self.backup_file, 'rb') as file:
             content = file.readlines()
@@ -161,26 +181,6 @@ class Reader():
         except requests.exceptions.ConnectionError:
             self.previous_request_failed = True
             self.buffer_backup_data(data)
-
-    def get_data_from_telegram(self, telegram):
-        solar = self.read_solar()
-
-        data = {
-            'raspberry_pi_id': self.raspberry_pi_id,
-            'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
-            'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value),
-            'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value),
-            'solar_now': solar['now'],
-            'usage_total_high': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value),
-            'redelivery_total_high': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value),
-            'usage_total_low': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value),
-            'redelivery_total_low': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value),
-            'solar_total': solar['total'],
-            'usage_gas_now': "0",
-            'usage_gas_total': str(telegram[obis_references.HOURLY_GAS_METER_READING].value)
-        }
-
-        return data
 
     def read_solar(self):
         solar = {
