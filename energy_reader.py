@@ -226,7 +226,7 @@ class Reader():
             "url":url
         }
 
-        file.write(json.dumps(log))
+        file.write(json.dumps(log) + "\n")
         file.close()
 
 if __name__ == "__main__":
