@@ -210,7 +210,7 @@ class Reader():
             return solar
 
     def buffer_backup_data(self, data):
-        data['unix_timestamp'] = time.time()
+        data['unix_timestamp'] = int(time.time())
 
         file = open(self.backup_file, 'a')
         file.write(json.dumps(data) + "\n")
