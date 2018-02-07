@@ -171,8 +171,8 @@ class Reader():
         try:
             response = requests.post(self.store_energy_url, data=json.dumps({'data': [data]}), headers=headers)
 
-            # if response.status_code == requests.codes.created:
-            #     return
+            if response.status_code == requests.codes.created:
+                return
 
             if response.status_code == requests.codes.unauthorized and not self.retry:
                 self.set_token()
