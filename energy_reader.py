@@ -21,6 +21,7 @@ class Reader():
         self.store_energy_url = self.base_url + "/v1/energy"
         self.backup_file = "buffer.data"
         self.error_log = "error.log"
+        self.previous_request_failed = False
 
         self.set_mac_address()
         self.get_public_ip_address()
