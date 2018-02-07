@@ -69,7 +69,7 @@ class Reader():
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
 
         response = requests.post(url, data=token_validation, headers=headers)
-        self.token = "Bearer " + json.loads(response.text)["access_token"].encode("utf-8")
+        self.token = "Bearer " + json.loads(response.text)["access_token"]
 
     def file_length(sefl, fileName):
         if not os.path.isfile(fileName):
