@@ -144,7 +144,7 @@ class Reader():
             i = 0
 
             for line in content:
-                dataRow = json.loads(line)
+                dataRow = json.loads(str(line))
                 data.append(dataRow)
                 i += 1
 
@@ -187,6 +187,7 @@ class Reader():
                 self.write_error_to_log(response=response, data_send={'data': [data]},
                                         url=self.store_energy_url)
         except requests.exceptions.ConnectionError:
+            logging.info("%s could not be reached", self.store_energy_url)
             self.previous_request_failed = True
             self.buffer_backup_data(data)
 
@@ -201,8 +202,7 @@ class Reader():
 
         try:
             time.sleep(0.85)
-            response = requests.get(url=self.solar_url, timeout=2)
-            solar_data = json.loads(response.content)
+            solar_data = requests.get(url=self.solar_url, timeout=2).json()
             solar['now'] = solar_data['Body']['Data']['PAC']['Value']
             solar['total'] = solar_data['Body']['Data']['TOTAL_ENERGY']['Value']
 
