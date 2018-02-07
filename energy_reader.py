@@ -152,6 +152,9 @@ class Reader():
                 response = requests.post(self.store_energy_url, data=json.dumps({'data': data}), headers=headers)
 
                 if response.status_code == requests.codes.created:
+                    file = open(self.backup_file, 'w')
+                    file.close()
+                    self.previous_request_failed = False
                     return
 
                 if response.status_code == requests.codes.unauthorized and not self.retry:
@@ -166,10 +169,6 @@ class Reader():
 
             except requests.exceptions.ConnectionError:
                 return
-
-            file = open(self.backup_file, 'w')
-            file.close()
-            self.previous_request_failed = False
 
     def send_data_to_api(self, data, headers):
         try:
@@ -211,10 +210,7 @@ class Reader():
             return solar
 
     def buffer_backup_data(self, data):
-        time = datetime.datetime.utcnow().strftime("%Y-%m-%d %X")
-
-        data['created_at'] = time
-        data['updated_at'] = time
+        data['unix_timestamp'] = time.time()
 
         file = open(self.backup_file, 'a')
         file.write(json.dumps(data) + "\n")
