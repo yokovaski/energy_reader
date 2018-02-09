@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import requests, json
 from uuid import getnode as get_mac
 from dsmr_parser import telegram_specifications

@@ -1,0 +1,15 @@
+[Unit]
+Description=test
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/home/erwin/PycharmProjects/energy_reader/test.py
+User=erwin
+WorkingDirectory=/home/erwin/PycharmProjects/energy_reader
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

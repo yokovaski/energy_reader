@@ -1,0 +1,15 @@
+[Unit]
+Description=Energy reader
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/home/pi/energy_reader/energy_reader.py
+User=pi
+WorkingDirectory=/home/pi/energy_reader
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
