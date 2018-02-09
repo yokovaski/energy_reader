@@ -4,6 +4,9 @@ import logging
 import logging.handlers
 from subprocess import call
 import threading
+import signal
+
+threads = []
 
 class TestApp(threading.Thread):
     def __init__(self, name):
@@ -18,7 +21,6 @@ class TestApp(threading.Thread):
 
         self.my_logger.debug('this is debug')
         self.my_logger.critical('this is critical')
-
         self.keep_running = True
 
     def run(self):
@@ -31,9 +33,32 @@ class TestApp(threading.Thread):
             time.sleep(1)
             i += 1
 
+    def stop(self):
+        self.keep_running = False
+
     def launch_script(self, script):
         call(script)
 
+def stop_threads(threads):
+    print("stopping threads")
+
+    for thread in threads:
+        thread.stop()
+        thread.join()
+
+    print("all threads are stopped")
+
 if __name__ == "__main__":
-    app = TestApp("Test")
-    app.run()
+
+    print("creating threads")
+
+    for i in range(0,4):
+        threads.append(TestApp("Thread %d" % i))
+
+    print("starting threads")
+
+    for thread in threads:
+        thread.start()
+
+    signal.signal(signal.SIGINT, stop_threads(threads))
+    signal.signal(signal.SIGTERM, stop_threads(threads))
