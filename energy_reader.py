@@ -58,7 +58,7 @@ class Reader():
         url = self.base_url + "/v1/raspberrypis"
         headers = {"Content-type": "application/json", "Accept": "application/json"}
 
-        response = requests.post(url, data=json.dumps(tokenValidation), headers=headers).json()
+        response = requests.post(url, data=json.dumps(list(tokenValidation)), headers=headers).json()
 
         self.raspberry_pi_id = response["data"]["id"]
         self.client_id = response["data"]["client_id"]
