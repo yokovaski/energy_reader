@@ -1,5 +1,9 @@
 # Install energy_reader
 
+## Install python 3
+* `sudo apt-get install python3`
+* `sudo apt-get install python3-pip`
+
 ## Python dependencies
 
 * Use pip3 to install all the python related dependencies

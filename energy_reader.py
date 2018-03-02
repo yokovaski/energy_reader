@@ -7,7 +7,6 @@ from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
 import logging
 import os
-from urllib.request import urlopen
 import time
 import datetime
 
@@ -23,6 +22,8 @@ class Reader():
         self.store_energy_url = self.base_url + "/v1/energy"
         self.backup_file = "buffer.data"
         self.error_log = "error.log"
+        self.previous_request_failed = False
+        self.retry = False
 
         self.set_mac_address()
         self.get_public_ip_address()
@@ -33,6 +34,10 @@ class Reader():
             file = open(self.backup_file, 'w')
             file.close()
 
+        if (self.file_length(self.error_log) < 1):
+            file = open(self.error_log, 'w')
+            file.close()
+
     def set_mac_address(self):
         mac = get_mac()
         self.mac_address = ':'.join(("%012X" % mac)[i:i + 2] for i in range(0, 12, 2))
@@ -41,24 +46,23 @@ class Reader():
         if os.environ.get("LOCAL") == "True":
             self.public_ip_address = "127.0.0.1"
         else:
-            self.public_ip_address = json.loads(requests.get("http://jsonip.com").text)["ip"]
+            self.public_ip_address = requests.get("http://jsonip.com").json()["ip"]
 
     def set_raspberry_pi_id(self):
         tokenValidation = {
-            "key": self.key.encode("utf-8"),
-            "ip_address": self.public_ip_address.encode("utf-8"),
-            "mac_address": self.mac_address.encode("utf-8")
+            "key": self.key,
+            "ip_address": self.public_ip_address,
+            "mac_address": self.mac_address
         }
 
         url = self.base_url + "/v1/raspberrypis"
         headers = {"Content-type": "application/json", "Accept": "application/json"}
 
-        response = requests.post(url, data=json.dumps(tokenValidation), headers=headers)
-        response_data = json.loads(response.content)
+        response = requests.post(url, data=json.dumps(tokenValidation), headers=headers).json()
 
-        self.raspberry_pi_id = response_data["data"]["id"]
-        self.client_id = response_data["data"]["client_id"]
-        self.client_secret = response_data['data']["client_secret"]
+        self.raspberry_pi_id = response["data"]["id"]
+        self.client_id = response["data"]["client_id"]
+        self.client_secret = response['data']["client_secret"]
 
     def set_token(self):
         token_validation = {
@@ -71,7 +75,7 @@ class Reader():
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "application/json"}
 
         response = requests.post(url, data=token_validation, headers=headers)
-        self.token = "Bearer " + json.loads(response.content)["access_token"].encode("utf-8")
+        self.token = "Bearer " + response.json()["access_token"]
 
     def file_length(sefl, fileName):
         if not os.path.isfile(fileName):
@@ -113,6 +117,26 @@ class Reader():
 
         self.send_data_to_api(data, headers)
 
+    def get_data_from_telegram(self, telegram):
+        solar = self.read_solar()
+
+        data = {
+            'raspberry_pi_id': self.raspberry_pi_id,
+            'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
+            'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
+            'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),
+            'solar_now': solar['now'],
+            'usage_total_high': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000),
+            'redelivery_total_high': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000),
+            'usage_total_low': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000),
+            'redelivery_total_low': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000),
+            'solar_total': solar['total'],
+            'usage_gas_now': "0",
+            'usage_gas_total': str(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000)
+        }
+
+        return data
+
     def send_back_up_data_to_api(self, headers):
         with open(self.backup_file, 'rb') as file:
             content = file.readlines()
@@ -122,65 +146,51 @@ class Reader():
             i = 0
 
             for line in content:
-                dataRow = json.loads(line)
+                dataRow = json.loads(line.decode('utf-8'))
                 data.append(dataRow)
                 i += 1
 
-            json_data = json.dumps({'data': data})
-
             try:
-                response = requests.post(self.store_energy_url, data=json_data, headers=headers)
+                response = requests.post(self.store_energy_url, data=json.dumps({'data': data}), headers=headers)
 
-                if response.status_code == 401 and not self.retry:
+                if response.status_code == requests.codes.created:
+                    file = open(self.backup_file, 'w')
+                    file.close()
+                    self.previous_request_failed = False
+                    return
+
+                if response.status_code == requests.codes.unauthorized and not self.retry:
                     self.set_token()
                     self.retry = True
                     self.send_back_up_data_to_api(headers)
                 else:
-                    self.write_error_to_log(response=response, data_send=json.dumps({'data': [data]}),
+                    self.retry = False
+                    self.write_error_to_log(response=response, data_send={'data': data},
                                             url=self.store_energy_url)
                     return
 
             except requests.exceptions.ConnectionError:
                 return
 
-            file = open(self.backup_file, 'w')
-            file.close()
-            self.previous_request_failed = False
-
     def send_data_to_api(self, data, headers):
         try:
             response = requests.post(self.store_energy_url, data=json.dumps({'data': [data]}), headers=headers)
 
-            if response.status_code == 401 and not self.retry:
+            if response.status_code == requests.codes.created:
+                return
+
+            if response.status_code == requests.codes.unauthorized and not self.retry:
                 self.set_token()
                 self.retry = True
                 self.send_data_to_api(data, headers)
             else:
-                self.write_error_to_log(response=response, data_send=json.dumps({'data': [data]}),
+                self.retry = False
+                self.write_error_to_log(response=response, data_send={'data': [data]},
                                         url=self.store_energy_url)
         except requests.exceptions.ConnectionError:
+            logging.info("%s could not be reached", self.store_energy_url)
             self.previous_request_failed = True
             self.buffer_backup_data(data)
-
-    def get_data_from_telegram(self, telegram):
-        solar = self.read_solar()
-
-        data = {
-            'raspberry_pi_id': self.raspberry_pi_id,
-            'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
-            'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value),
-            'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value),
-            'solar_now': solar['now'],
-            'usage_total_high': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value),
-            'redelivery_total_high': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value),
-            'usage_total_low': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value),
-            'redelivery_total_low': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value),
-            'solar_total': solar['total'],
-            'usage_gas_now': "0",
-            'usage_gas_total': str(telegram[obis_references.HOURLY_GAS_METER_READING].value)
-        }
-
-        return data
 
     def read_solar(self):
         solar = {
@@ -193,8 +203,7 @@ class Reader():
 
         try:
             time.sleep(0.85)
-            response = requests.get(url=self.solar_url, timeout=2)
-            solar_data = json.loads(response.content)
+            solar_data = requests.get(url=self.solar_url, timeout=2).json()
             solar['now'] = solar_data['Body']['Data']['PAC']['Value']
             solar['total'] = solar_data['Body']['Data']['TOTAL_ENERGY']['Value']
 
@@ -203,10 +212,7 @@ class Reader():
             return solar
 
     def buffer_backup_data(self, data):
-        time = datetime.datetime.utcnow().strftime("%Y-%m-%d %X")
-
-        data['created_at'] = time
-        data['updated_at'] = time
+        data['unix_timestamp'] = int(time.time())
 
         file = open(self.backup_file, 'a')
         file.write(json.dumps(data) + "\n")
@@ -217,13 +223,13 @@ class Reader():
 
         log = {
             "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%d %X"),
-            "reponse":response,
-            "status_code":response.status_code,
+            "reponse":response.json(),
+            "status_code":str(response.status_code),
             "data_send":data_send,
             "url":url
         }
 
-        file.write(json.dumps(log))
+        file.write(json.dumps(log) + "\n")
         file.close()
 
 if __name__ == "__main__":
