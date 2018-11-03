@@ -8,7 +8,7 @@ from dsmr_parser import obis_references
 
 
 class MessageReader(threading.Thread):
-    def __init__(self, energy_data_queue, config):
+    def __init__(self, energy_data_queue, config, stop_event):
         super().__init__()
 
         self.energy_data_queue = energy_data_queue
@@ -16,6 +16,7 @@ class MessageReader(threading.Thread):
         self.raspberry_pi_id = config['raspberry_pi_id']
         self.solar_ip = config['solar_ip']
         self.solar_url = config['solar_url']
+        self.stop_event = stop_event
 
     def init_reader(self):
         serial_reader = SerialReader(
@@ -33,6 +34,10 @@ class MessageReader(threading.Thread):
         for telegram in self.reader.read():
             data = self.extract_data_from_telegram(telegram)
             self.energy_data_queue.put(data)
+            if self.stop_event.is_set():
+                break
+
+        logging.info("Reader has been terminated")
 
     def extract_data_from_telegram(self, telegram):
         solar = self.read_solar()
