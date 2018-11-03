@@ -7,10 +7,10 @@ import time
 
 
 class Mocker(Thread):
-    def __init__(self, energy_data_queue, stop_event):
+    def __init__(self, raspberry_pi_id, energy_data_queue, stop_event):
         super().__init__()
 
-        self.raspberry_pi_id = 99
+        self.raspberry_pi_id = raspberry_pi_id
         self.energy_data_queue = energy_data_queue
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
