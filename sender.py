@@ -6,6 +6,7 @@ import threading
 import queue
 import logging
 import requests
+import json
 
 
 class Sender(threading.Thread):
@@ -53,15 +54,14 @@ class Sender(threading.Thread):
 
         except requests.exceptions.ConnectionError:
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
-            # self.previous_request_failed = True
-            # self.buffer_backup_data(data)
-            # TODO write data to backup
+            self.write_messages_to_backup_file(messages)
 
     def write_messages_to_backup_file(self, messages):
-        with open(self.backup_file) as backup_file:
-            do_something = ""
+        with open(self.backup_file, 'a') as backup_file:
+            backup_file.write(json.dumps(messages) + "\n")
+            backup_file.close()
 
-    def send_message_to_listeners(self, status, error=None, message=None):
+    def send_message_to_listeners(self, status, error=None, description=None):
         message = dict()
         message["thread"] = Thread.SENDER
         message["status"] = status
@@ -70,6 +70,6 @@ class Sender(threading.Thread):
             message["error"] = error
 
         if message is not None:
-            message["message"] = message
+            message["description"] = description
 
         self.status_queue.put(message)

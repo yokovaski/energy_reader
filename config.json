@@ -3,5 +3,7 @@
   "solar_url":"/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=CommonInverterData",
   "local":"false",
   "api_url":"",
-  "secret":""
+  "secret":"",
+  "key":"",
+  "local":"true"
 }

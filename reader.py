@@ -43,6 +43,7 @@ class MessageReader(threading.Thread):
         solar = self.read_solar()
 
         data = {
+            'unix_timestamp': int(time.time()),
             'raspberry_pi_id': self.raspberry_pi_id,
             'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
             'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),

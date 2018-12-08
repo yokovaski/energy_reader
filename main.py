@@ -49,6 +49,7 @@ class MainEnergyReader(threading.Thread):
             time.sleep(1)
 
     def handle_status_message_of_thread(self, message):
+        print(message["thread"] + " | " + message)
         if message["thread"] is Thread.SENDER:
             do_stuff = ""
 

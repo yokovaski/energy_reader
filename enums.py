@@ -2,16 +2,16 @@ from enum import Enum
 
 
 class Thread(Enum):
-    READER = 1
-    DUMMY_READER = 2
-    SENDER = 2
+    READER = "READER"
+    DUMMY_READER = "DUMMY_READER"
+    SENDER = "SENDER"
 
 
 class Status(Enum):
-    STOPPED = 1
-    RUNNING = 2
+    STOPPED = "STOPPED"
+    RUNNING = "RUNNING"
 
 
 class Error(Enum):
-    UNAUTHORIZED = 1
-    SERVER_UNREACHABLE = 2
+    UNAUTHORIZED = "UNAUTHORIZED"
+    SERVER_UNREACHABLE = "SERVER_UNREACHABLE"
