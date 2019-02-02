@@ -23,6 +23,8 @@ class Sender(threading.Thread):
         self.backup_file = "backup"
 
     def run(self):
+        time.sleep(30)
+
         logging.info("Sender has been started")
 
         while not self.stop_event.is_set():
