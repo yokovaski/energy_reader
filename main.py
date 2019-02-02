@@ -18,12 +18,11 @@ class MainEnergyReader(threading.Thread):
         self.stop_reader_event = threading.Event()
         self.stop_sender_event = threading.Event()
 
-        config = self.load_config()
-        self.solar_ip = config["solar_ip"]
-        self.solar_url = config["solar_url"]
-        self.base_url = config["api_url"]
-        self.local = config["local"]
-        self.raspberry_pi_id = config["raspberry_pi_id"]
+        self.config = self.load_config()
+        self.solar_ip = self.config["solar_ip"]
+        self.solar_url = self.config["solar_url"]
+        self.base_url = self.config["api_url"]
+        self.local = self.config["local"]
 
     def load_config(self):
         with open("config.json") as config_file:
@@ -33,13 +32,16 @@ class MainEnergyReader(threading.Thread):
 
     def run(self):
         if self.local == "true":
-            reader = Mocker(self.raspberry_pi_id, self.message_queue, self.stop_reader_event)
+            reader = Mocker(self.message_queue, self.stop_reader_event)
         else:
-            reader = Reader(self.raspberry_pi_id, self.message_queue, self.status_queue, self.stop_reader_event)
+            reader = Reader(energy_data_queue=self.message_queue, status_queue=self.status_queue, config=self.config,
+                            stop_event=self.stop_reader_event)
 
         reader.start()
 
-        sender = Sender(self.message_queue, self.status_queue, self.stop_sender_event)
+        sender = Sender(energy_data_queue=self.message_queue, status_queue=self.status_queue,
+                        stop_event=self.stop_sender_event, config=self.config)
+
         sender.start()
 
         while True:
@@ -49,11 +51,22 @@ class MainEnergyReader(threading.Thread):
             time.sleep(1)
 
     def handle_status_message_of_thread(self, message):
-        print(message["thread"] + " | " + message)
-        if message["thread"] is Thread.SENDER:
-            do_stuff = ""
+        print(message)
+        # print(message["thread"] + " | " + message)
+        # if message["thread"] is Thread.SENDER:
+        #     do_stuff = ""
+
+    def stop_all_threads(self):
+        self.stop_reader_event.set()
+        self.stop_sender_event.set()
 
 
 if __name__ == '__main__':
     energy_reader = MainEnergyReader()
     energy_reader.start()
+
+    try:
+        while (True):
+            time.sleep(1)
+    except KeyboardInterrupt:
+        energy_reader.stop_all_threads()

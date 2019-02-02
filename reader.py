@@ -7,13 +7,13 @@ from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
 
 
-class MessageReader(threading.Thread):
-    def __init__(self, energy_data_queue, config, stop_event):
+class Reader(threading.Thread):
+    def __init__(self, energy_data_queue, status_queue, config, stop_event):
         super().__init__()
 
         self.energy_data_queue = energy_data_queue
+        self.status_queue = status_queue
         self.reader = self.init_reader()
-        self.raspberry_pi_id = config['raspberry_pi_id']
         self.solar_ip = config['solar_ip']
         self.solar_url = config['solar_url']
         self.stop_event = stop_event
@@ -44,7 +44,6 @@ class MessageReader(threading.Thread):
 
         data = {
             'unix_timestamp': int(time.time()),
-            'raspberry_pi_id': self.raspberry_pi_id,
             'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
             'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
             'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),

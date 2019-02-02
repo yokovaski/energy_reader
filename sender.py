@@ -28,7 +28,7 @@ class Sender(threading.Thread):
         while not self.stop_event.is_set():
             try:
                 data = self.energy_data_queue.get(False)
-                self.send_data_to_api(data)
+                self.send_data_to_api([data])
             except queue.Empty:
                 time.sleep(1)
 
@@ -41,10 +41,11 @@ class Sender(threading.Thread):
         }
 
         try:
-            response = requests.post(self.store_energy_url, data=json.dumps({'data': messages, "token": self.key}),
+            response = requests.post(self.store_energy_url, data=json.dumps({'data': messages, "rpi_key": self.key}),
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
+                print("successfully stored energy data")
                 return
 
             if response.status_code == requests.codes.unauthorized:
