@@ -45,7 +45,6 @@ class Sender(threading.Thread):
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
-                print("successfully stored energy data")
                 return
 
             if response.status_code == requests.codes.unauthorized:

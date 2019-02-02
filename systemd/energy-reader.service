@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/home/pi/energy_reader/energy_reader.py
+ExecStart=/home/pi/energy_reader/main.py
 User=pi
 WorkingDirectory=/home/pi/energy_reader
 Restart=on-failure
