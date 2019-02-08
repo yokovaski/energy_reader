@@ -1,4 +1,7 @@
 .idea/
+energy_reader.log
 error.log
 backup.data
 venv/
+env/
+.vscode/

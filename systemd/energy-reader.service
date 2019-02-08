@@ -1,15 +1,11 @@
 [Unit]
-Description=Energy reader
+Description=Energy Reader
 After=multi-user.target
 
 [Service]
-Type=simple
-ExecStart=/home/pi/energy_reader/main.py
-User=pi
-WorkingDirectory=/home/pi/energy_reader
+Type=idle
+ExecStart=/home/pi/energy_reader/start.sh
 Restart=on-failure
-StandardOutput=syslog
-StandardError=syslog
 
 [Install]
 WantedBy=multi-user.target

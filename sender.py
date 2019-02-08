@@ -23,18 +23,23 @@ class Sender(threading.Thread):
         self.backup_file = "backup"
 
     def run(self):
-        time.sleep(30)
-
-        logging.info("Sender has been started")
+        self.send_message_to_listeners(Status.RUNNING, description="Sender has been started")
 
         while not self.stop_event.is_set():
-            try:
-                data = self.energy_data_queue.get(False)
-                self.send_data_to_api([data])
-            except queue.Empty:
-                time.sleep(1)
+            data = []
+            while not self.energy_data_queue.empty():
+                message = self.energy_data_queue.get(False)
+                data.append(message)
 
-        logging.info("Sender has been terminated")
+                if len(data) > 30:
+                    break
+
+            if len(data) > 0:
+                self.send_data_to_api(data)
+
+            time.sleep(1)
+
+        self.send_message_to_listeners(Status.STOPPED,  description="Sender has been terminated")
 
     def send_data_to_api(self, messages):
         headers = {

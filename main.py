@@ -9,6 +9,7 @@ from sender import Sender
 import threading
 import json
 import time
+import sys
 
 
 class MainEnergyReader(threading.Thread):
@@ -24,6 +25,7 @@ class MainEnergyReader(threading.Thread):
         self.solar_url = self.config["solar_url"]
         self.base_url = self.config["api_url"]
         self.local = self.config["local"]
+        self.stop = False
 
     def load_config(self):
         with open("config.json") as config_file:
@@ -45,11 +47,15 @@ class MainEnergyReader(threading.Thread):
 
         sender.start()
 
-        while True:
+        while not self.stop:
             while not self.status_queue.empty():
                 self.handle_status_message_of_thread(self.status_queue.get())
 
             time.sleep(1)
+
+        # Handle messages that are still in the queue
+        while not self.status_queue.empty():
+            self.handle_status_message_of_thread(self.status_queue.get())
 
     def handle_status_message_of_thread(self, message):
         print(message)
@@ -60,6 +66,7 @@ class MainEnergyReader(threading.Thread):
     def stop_all_threads(self):
         self.stop_reader_event.set()
         self.stop_sender_event.set()
+        self.stop = True
 
 
 if __name__ == '__main__':

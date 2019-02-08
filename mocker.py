@@ -34,6 +34,7 @@ class Mocker(Thread):
     def run(self):
         while not self.stop_event.is_set():
             message = self.build_mock_data()
+            print(message)
             self.energy_data_queue.put(message)
             time.sleep(10)
 
