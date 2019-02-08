@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from enums import Thread
 from enums import Status
 from enums import Error
