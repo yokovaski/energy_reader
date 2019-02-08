@@ -1,8 +1,7 @@
 {
   "solar_ip":"",
   "solar_url":"/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=CommonInverterData",
-  "local":"true",
-  "api_url":"http://local.api.energiezicht.nl",
-  "secret":"",
-  "key":"hi"
+  "local":"false",
+  "api_url":"",
+  "key":""
 }
