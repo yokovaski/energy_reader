@@ -59,7 +59,8 @@ class Sender(threading.Thread):
                                                "Could not authorize with given key")
                 self.stop_event.set()
 
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            print(e);
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
             self.write_messages_to_backup_file(messages)
 
