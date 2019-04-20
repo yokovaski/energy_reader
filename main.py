@@ -11,7 +11,6 @@ from _datetime import datetime
 import threading
 import json
 import time
-import sys
 
 
 class MainEnergyReader(threading.Thread):
@@ -51,18 +50,19 @@ class MainEnergyReader(threading.Thread):
 
         while not self.stop:
             while not self.status_queue.empty():
-                self.handle_status_message_of_thread(self.status_queue.get())
+                self.handle_status_message_of_thread(self.status_queue.get(), self.local)
 
             time.sleep(1)
 
         # Handle messages that are still in the queue
         while not self.status_queue.empty():
-            self.handle_status_message_of_thread(self.status_queue.get())
+            self.handle_status_message_of_thread(self.status_queue.get(), self.local)
 
-    def handle_status_message_of_thread(self, message, print_to_console=False):
+    @staticmethod
+    def handle_status_message_of_thread(message, local=False, print_to_console=False):
         log_message = '(UTC) {} | {}'.format(datetime.utcnow(), message)
 
-        if self.local or print_to_console:
+        if local or print_to_console:
             print()
         else:
             file = open('energy_reader.log', 'a')
@@ -76,14 +76,16 @@ class MainEnergyReader(threading.Thread):
 
 
 if __name__ == '__main__':
-    energy_reader = MainEnergyReader()
-    energy_reader.start()
-
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        energy_reader.stop_all_threads()
+        energy_reader = MainEnergyReader()
+        energy_reader.start()
+
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            energy_reader.stop_all_threads()
+        except Exception as e:
+            energy_reader.handle_status_message_of_thread(e, energy_reader.local, print_to_console=True)
     except Exception as e:
-        energy_reader.handle_status_message_of_thread(e, print_to_console=True)
-        energy_reader.stop_all_threads()
+        MainEnergyReader.handle_status_message_of_thread(e, print_to_console=True)
