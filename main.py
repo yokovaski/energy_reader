@@ -59,10 +59,10 @@ class MainEnergyReader(threading.Thread):
         while not self.status_queue.empty():
             self.handle_status_message_of_thread(self.status_queue.get())
 
-    def handle_status_message_of_thread(self, message):
-        log_message ='(UTC) {} | {}'.format(datetime.utcnow(), message)
+    def handle_status_message_of_thread(self, message, print_to_console=False):
+        log_message = '(UTC) {} | {}'.format(datetime.utcnow(), message)
 
-        if self.local:
+        if self.local or print_to_console:
             print()
         else:
             file = open('energy_reader.log', 'a')
@@ -85,5 +85,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         energy_reader.stop_all_threads()
     except Exception as e:
-        energy_reader.handle_status_message_of_thread(e)
+        energy_reader.handle_status_message_of_thread(e, print_to_console=True)
         energy_reader.stop_all_threads()
