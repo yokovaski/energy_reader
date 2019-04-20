@@ -11,6 +11,7 @@ from _datetime import datetime
 import threading
 import json
 import time
+import sys
 
 
 class MainEnergyReader(threading.Thread):
@@ -59,10 +60,14 @@ class MainEnergyReader(threading.Thread):
             self.handle_status_message_of_thread(self.status_queue.get())
 
     def handle_status_message_of_thread(self, message):
-        print('(UTC) {} | {}'.format(datetime.utcnow(), message))
-        # print(message["thread"] + " | " + message)
-        # if message["thread"] is Thread.SENDER:
-        #     do_stuff = ""
+        log_message ='(UTC) {} | {}'.format(datetime.utcnow(), message)
+
+        if self.local:
+            print()
+        else:
+            file = open('energy_reader.log', 'a')
+            file.write(log_message)
+            file.close()
 
     def stop_all_threads(self):
         self.stop_reader_event.set()
@@ -75,7 +80,10 @@ if __name__ == '__main__':
     energy_reader.start()
 
     try:
-        while (True):
+        while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        energy_reader.stop_all_threads()
+    except Exception as e:
+        energy_reader.handle_status_message_of_thread(e)
         energy_reader.stop_all_threads()
