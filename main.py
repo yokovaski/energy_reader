@@ -7,6 +7,7 @@ from queue import Queue
 from mocker import Mocker
 from reader import Reader
 from sender import Sender
+from _datetime import datetime
 import threading
 import json
 import time
@@ -58,7 +59,7 @@ class MainEnergyReader(threading.Thread):
             self.handle_status_message_of_thread(self.status_queue.get())
 
     def handle_status_message_of_thread(self, message):
-        print(message)
+        print('(UTC) {} | {}'.format(datetime.utcnow(), message))
         # print(message["thread"] + " | " + message)
         # if message["thread"] is Thread.SENDER:
         #     do_stuff = ""
