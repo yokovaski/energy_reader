@@ -2,16 +2,18 @@ import threading
 import logging
 import time
 import requests
+import json
 from dsmr_parser import telegram_specifications
 from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
+from redis_queue import RedisQueue
 
 
 class Reader(threading.Thread):
-    def __init__(self, energy_data_queue, status_queue, config, stop_event):
+    def __init__(self, status_queue, config, stop_event):
         super().__init__()
 
-        self.energy_data_queue = energy_data_queue
+        self.energy_data_queue = RedisQueue('normal')
         self.status_queue = status_queue
         self.reader = self.init_reader()
         self.solar_ip = config['solar_ip']
@@ -32,8 +34,8 @@ class Reader(threading.Thread):
 
     def read(self):
         for telegram in self.reader.read():
-            data = self.extract_data_from_telegram(telegram)
-            self.energy_data_queue.put(data)
+            energy_data = self.extract_data_from_telegram(telegram)
+            self.energy_data_queue.put(json.dumps(energy_data))
             if self.stop_event.is_set():
                 break
 

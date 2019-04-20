@@ -1,5 +1,6 @@
 import redis
 
+
 class RedisQueue(object):
     """Simple Queue with Redis Backend"""
     def __init__(self, name, namespace='queue', **redis_kwargs):
@@ -28,7 +29,6 @@ class RedisQueue(object):
             item = self.__db.blpop(self.key, timeout=timeout)
         else:
             item = self.__db.lpop(self.key)
-
 
         if item:
             item = item[1]

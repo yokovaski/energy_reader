@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from enums import Thread
 from enums import Status
 from enums import Error
@@ -9,7 +10,6 @@ from sender import Sender
 import threading
 import json
 import time
-import sys
 
 
 class MainEnergyReader(threading.Thread):
@@ -35,14 +35,14 @@ class MainEnergyReader(threading.Thread):
 
     def run(self):
         if self.local == "true":
-            reader = Mocker(self.message_queue, self.stop_reader_event)
+            reader = Mocker(stop_event=self.stop_reader_event)
         else:
-            reader = Reader(energy_data_queue=self.message_queue, status_queue=self.status_queue, config=self.config,
+            reader = Reader(status_queue=self.status_queue, config=self.config,
                             stop_event=self.stop_reader_event)
 
         reader.start()
 
-        sender = Sender(energy_data_queue=self.message_queue, status_queue=self.status_queue,
+        sender = Sender(status_queue=self.status_queue,
                         stop_event=self.stop_sender_event, config=self.config)
 
         sender.start()

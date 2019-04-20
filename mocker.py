@@ -6,13 +6,14 @@ import random
 import time
 import queue
 from threading import Event
+from redis_queue import RedisQueue
 
 
 class Mocker(Thread):
-    def __init__(self, energy_data_queue, stop_event):
+    def __init__(self, stop_event):
         super().__init__()
 
-        self.energy_data_queue = energy_data_queue
+        self.energy_data_queue = RedisQueue('normal')
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
 
@@ -35,14 +36,14 @@ class Mocker(Thread):
         while not self.stop_event.is_set():
             message = self.build_mock_data()
             print(message)
-            self.energy_data_queue.put(message)
+            self.energy_data_queue.put(json.dumps(message))
             time.sleep(10)
 
     def build_mock_data(self):
         message = copy.deepcopy(self.default_message)
-        data = self.generate_mock_data(message)
+        energy_data = self.generate_mock_data(message)
 
-        return data
+        return energy_data
 
     def generate_mock_data(self, message):
         message["mode"] = "1"
@@ -77,6 +78,7 @@ class Mocker(Thread):
 
         return message
 
+
 if __name__ == '__main__':
     message_queue = queue.Queue()
     event = Event()
@@ -84,7 +86,7 @@ if __name__ == '__main__':
     mocker.start()
 
     try:
-        while(True):
+        while True:
             try:
                 data = message_queue.get(False)
                 print(data)
