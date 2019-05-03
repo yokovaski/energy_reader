@@ -1,10 +1,15 @@
 # Install energy_reader
 
-## Python dependencies
+## Clone this repo
+* `cd ~ && git clone https://yokovaski@bitbucket.org/yokovaski/energy_reader.git`
 
-* Use pip3 to install all the python related dependencies
-  - `pip3 install setuptools`
-  - `pip3 install -r energy_reader/requirements.txt`
+## Install energy_reader
+* `sudo ./install.sh`
 
 ## Configuration
 * Set the parameters in config.json
+
+## start systemd service
+* `sudo systemctl start energy-reader.service`
+
+Check if the service is running with: `sudo systemctl status energy-reader`

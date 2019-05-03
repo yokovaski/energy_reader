@@ -1,0 +1,11 @@
+[Unit]
+Description=Energy Reader
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/energy_reader/start.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
