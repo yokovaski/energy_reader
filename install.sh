@@ -2,7 +2,7 @@
 
 sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get install -y git python3 python3-pip
+sudo apt-get install -y git python3 python3-pip redis
 cd /home/pi/energy-reader
 sudo pip3 install virtualenv
 virtualenv -p python3 venv
