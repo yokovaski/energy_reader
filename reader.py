@@ -1,5 +1,5 @@
 import threading
-import logging
+from enums import Thread, Status, Error
 import time
 import requests
 import json
@@ -17,8 +17,9 @@ class Reader(threading.Thread):
         self.status_queue = status_queue
         self.reader = self.init_reader()
         self.solar_ip = config['solar_ip']
-        self.solar_url = config['solar_url']
+        self.solar_url = self.solar_ip + config['solar_url']
         self.stop_event = stop_event
+        self.console_mode = True if config["console_mode"] == "true" else False
 
     def init_reader(self):
         serial_reader = SerialReader(
@@ -30,16 +31,22 @@ class Reader(threading.Thread):
         return serial_reader
 
     def run(self):
+        self.send_message_to_listeners(Status.RUNNING, description='Reader has been started')
         self.read()
 
     def read(self):
         for telegram in self.reader.read():
             energy_data = self.extract_data_from_telegram(telegram)
+
+            if self.console_mode:
+                self.send_message_to_listeners(Status.RUNNING, description=energy_data)
+
             self.energy_data_queue.put(json.dumps(energy_data))
+
             if self.stop_event.is_set():
                 break
 
-        logging.info("Reader has been terminated")
+        self.send_message_to_listeners(Status.STOPPED, description='Reader has been stopped')
 
     def extract_data_from_telegram(self, telegram):
         solar = self.read_solar()
@@ -61,7 +68,7 @@ class Reader(threading.Thread):
 
         return data
 
-    def read_solar(self):
+    def read_solar(self, retry=False):
         solar = {
             "now": 0,
             "total": 0
@@ -78,4 +85,22 @@ class Reader(threading.Thread):
 
             return solar
         except Exception:
+            if not retry:
+                solar = self.read_solar(True)
+
+            self.send_message_to_listeners(Status.RUNNING, Error.SOLAR_API, 'Could not read data from solar api: {}'.format(self.solar_url))
+
             return solar
+
+    def send_message_to_listeners(self, status, error=None, description=None):
+        message = dict()
+        message["thread"] = Thread.READER
+        message["status"] = status
+
+        if error is not None:
+            message["error"] = error
+
+        if message is not None:
+            message["description"] = description
+
+        self.status_queue.put(message)

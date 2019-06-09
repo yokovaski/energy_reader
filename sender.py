@@ -21,6 +21,7 @@ class Sender(threading.Thread):
         self.key = config["key"]
         self.store_energy_url = self.base_url + "/v2/energy"
         self.backup_file = "backup"
+        self.console_mode = True if config["console_mode"] == "true" else False
 
         self.connected = False
 
@@ -99,6 +100,8 @@ class Sender(threading.Thread):
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
+                if self.console_mode:
+                    self.send_message_to_listeners(Status.RUNNING, description="Succesfully stored energy data")
                 return
 
             if response.status_code == requests.codes.unauthorized:
