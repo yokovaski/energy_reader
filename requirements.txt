@@ -2,7 +2,6 @@ certifi==2019.3.9
 chardet==3.0.4
 dsmr-parser==0.13
 idna==2.8
-pkg-resources==0.0.0
 PyCRC==1.21
 pyserial==3.4
 pyserial-asyncio==0.4

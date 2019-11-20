@@ -14,6 +14,7 @@ class Reader(threading.Thread):
         super().__init__()
 
         self.energy_data_queue = RedisQueue('normal')
+        self.solar_queue = RedisQueue('solar_total')
         self.status_queue = status_queue
         self.reader = self.init_reader()
         self.solar_ip = config['solar_ip']
@@ -77,11 +78,25 @@ class Reader(threading.Thread):
         if str(self.solar_ip) is "":
             return solar
 
+        solar_total = 0
+
+        while not self.solar_queue.empty():
+            solar_total_queue = int(self.solar_queue.get())
+            if solar_total_queue > solar_total:
+                solar_total = solar_total_queue
+
         try:
             time.sleep(0.85)
             solar_data = requests.get(url=self.solar_url, timeout=2).json()
             solar['now'] = solar_data['Body']['Data']['PAC']['Value']
             solar['total'] = solar_data['Body']['Data']['TOTAL_ENERGY']['Value']
+
+            self.solar_queue.put(solar['total'])
+
+            return solar
+        except requests.exceptions.ConnectTimeout:
+            solar['total'] = solar_total
+            self.solar_queue.put(solar_total)
 
             return solar
         except Exception:
