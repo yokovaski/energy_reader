@@ -1,13 +1,14 @@
 {
   "mode": "",
-  "usage_now": "",
-  "redelivery_now": "",
-  "solar_now": "",
-  "usage_total_high": "",
-  "redelivery_total_high": "",
-  "usage_total_low": "",
-  "redelivery_total_low": "",
-  "solar_total": "",
-  "usage_gas_now": "",
-  "usage_gas_total": ""
+  "usageNow": "",
+  "redeliveryNow": "",
+  "solarNow": "",
+  "usageTotalHigh": "",
+  "redeliveryTotalHigh": "",
+  "usageTotalLow": "",
+  "redeliveryTotalLow": "",
+  "solarTotal": "",
+  "usageGasNow": "",
+  "usageGasTotal": "",
+  "created": ""
 }

@@ -1,3 +1,4 @@
+import datetime
 import threading
 from enums import Thread, Status, Error
 import time
@@ -52,18 +53,18 @@ class Reader(threading.Thread):
         solar = self.read_solar()
 
         data = {
-            'unix_timestamp': int(time.time()),
             'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
-            'usage_now': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
-            'redelivery_now': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),
-            'solar_now': solar['now'],
-            'usage_total_high': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000),
-            'redelivery_total_high': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000),
-            'usage_total_low': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000),
-            'redelivery_total_low': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000),
-            'solar_total': solar['total'],
-            'usage_gas_now': "0",
-            'usage_gas_total': str(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000)
+            'usageNow': str(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
+            'redeliveryNow': str(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),
+            'solarNow': solar['now'],
+            'usageTotalHigh': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000),
+            'redeliveryTotalHigh': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000),
+            'usageTotalLow': str(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000),
+            'redeliveryTotalLow': str(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000),
+            'solarTotal': solar['total'],
+            'usageGasNow': "0",
+            'usageGasTotal': str(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000),
+            'created': datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
         }
 
         return data

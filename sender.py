@@ -19,7 +19,7 @@ class Sender(threading.Thread):
 
         self.base_url = config["api_url"]
         self.key = config["key"]
-        self.store_energy_url = self.base_url + "/v2/energy"
+        self.store_energy_url = self.base_url + "/api/v3/energy"
         self.backup_file = "backup"
         self.console_mode = True if config["console_mode"] == "true" else False
 
@@ -92,16 +92,17 @@ class Sender(threading.Thread):
     def send_data_to_api(self, messages):
         headers = {
             'Content-type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'rpiKey': self.key
         }
 
         try:
-            response = requests.post(self.store_energy_url, data=json.dumps({'data': messages, "rpi_key": self.key}),
+            response = requests.post(self.store_energy_url, data=json.dumps(messages[0]),
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
                 if self.console_mode:
-                    self.send_message_to_listeners(Status.RUNNING, description="Succesfully stored energy data")
+                    self.send_message_to_listeners(Status.RUNNING, description="Successfully stored energy data")
                 return
 
             if response.status_code == requests.codes.unauthorized:
