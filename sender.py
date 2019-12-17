@@ -49,7 +49,7 @@ class Sender(threading.Thread):
 
             time.sleep(5)
 
-        self.send_message_to_listeners(Status.STOPPED,  description="Sender has been terminated")
+        self.send_message_to_listeners(Status.STOPPED, description="Sender has been terminated")
 
     def read_messages_from_retry_queue(self):
         retry_data = []
@@ -109,6 +109,10 @@ class Sender(threading.Thread):
                 self.send_message_to_listeners(Status.STOPPED, Error.UNAUTHORIZED,
                                                "Could not authorize with given key")
                 self.stop_event.set()
+                return
+
+            self.send_message_to_listeners(Status.RUNNING, Error.SERVER_ERROR,
+                                           f"Received unexpected status code from server: {response.status_code}")
 
         except requests.exceptions.ConnectionError as e:
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
