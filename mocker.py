@@ -45,9 +45,9 @@ class Mocker(Thread):
         return energy_data
 
     def generate_mock_data(self, message):
-        message["mode"] = "1"
+        message["mode"] = 1
 
-        random_decider = random.randint(0,10000)
+        random_decider = random.randint(0, 10000)
 
         if random_decider < 6000:
             usage = random.randint(0, 2500)
