@@ -1,11 +1,11 @@
-certifi==2019.3.9
+certifi==2019.11.28
 chardet==3.0.4
-dsmr-parser==0.13
+dsmr-parser==0.18
 idna==2.8
 PyCRC==1.21
 pyserial==3.4
 pyserial-asyncio==0.4
-pytz==2019.1
-redis==3.2.1
+pytz==2019.3
+redis==3.4.1
 requests==2.22.0
-urllib3==1.25.3
+urllib3==1.25.8
