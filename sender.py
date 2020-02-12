@@ -112,7 +112,7 @@ class Sender(threading.Thread):
                 return
 
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_ERROR,
-                                           f"Received unexpected status code from server: {response.status_code}")
+                                           "Received unexpected status code from server: " + response.status_code)
 
         except requests.exceptions.ConnectionError as e:
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
