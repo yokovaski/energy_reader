@@ -53,17 +53,17 @@ class Reader(threading.Thread):
         solar = self.read_solar()
 
         data = {
-            'mode': str(telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value),
-            'usageNow': str(int(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000)),
-            'redeliveryNow': str(int(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000)),
+            'mode': telegram[obis_references.ELECTRICITY_ACTIVE_TARIFF].value,
+            'usageNow': int(telegram[obis_references.CURRENT_ELECTRICITY_USAGE].value * 1000),
+            'redeliveryNow': int(telegram[obis_references.CURRENT_ELECTRICITY_DELIVERY].value * 1000),
             'solarNow': solar['now'],
-            'usageTotalHigh': str(int(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000)),
-            'redeliveryTotalHigh': str(int(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000)),
-            'usageTotalLow': str(int(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000)),
-            'redeliveryTotalLow': str(int(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000)),
+            'usageTotalHigh': int(telegram[obis_references.ELECTRICITY_USED_TARIFF_2].value * 1000),
+            'redeliveryTotalHigh': int(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_2].value * 1000),
+            'usageTotalLow': int(telegram[obis_references.ELECTRICITY_USED_TARIFF_1].value * 1000),
+            'redeliveryTotalLow': int(telegram[obis_references.ELECTRICITY_DELIVERED_TARIFF_1].value * 1000),
             'solarTotal': solar['total'],
-            'usageGasNow': "0",
-            'usageGasTotal': str(int(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000)),
+            'usageGasNow': 0,
+            'usageGasTotal': int(telegram[obis_references.HOURLY_GAS_METER_READING].value * 1000),
             'created': datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
         }
 
