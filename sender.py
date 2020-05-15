@@ -97,7 +97,11 @@ class Sender(threading.Thread):
         }
 
         try:
-            response = requests.post(self.store_energy_url, data=json.dumps(messages[0]),
+            data = {
+                "metrics": messages
+            }
+
+            response = requests.post(self.store_energy_url, data=json.dumps(data),
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
