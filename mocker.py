@@ -1,3 +1,4 @@
+import logging
 from threading import Thread
 import copy
 import json
@@ -9,10 +10,11 @@ import datetime
 
 
 class Mocker(Thread):
-    def __init__(self, stop_event):
+    def __init__(self, stop_event, logger: logging.Logger):
         super().__init__()
 
         self.daemon = True
+        self.logger = logger
 
         self.energy_data_queue = RedisQueue('normal')
         self.stop_event = stop_event
@@ -23,13 +25,12 @@ class Mocker(Thread):
         self.total_solar = random.randint(1000, 5000)
         self.total_gas = random.randint(1000, 5000)
 
-    @staticmethod
-    def get_default_message():
+    def get_default_message(self):
         try:
             with open('default_message.json') as default_message_file:
                 default_message = json.load(default_message_file)
         except:
-            print('Something went wrong when trying to open default_message.json')
+            self.logger.error('Something went wrong when trying to open default_message.json')
             sys.exit()
 
         return default_message
@@ -37,7 +38,7 @@ class Mocker(Thread):
     def run(self):
         while not self.stop_event.is_set():
             message = self.build_mock_data()
-            print(message)
+            self.logger.info(message)
             self.energy_data_queue.put(json.dumps(message))
             time.sleep(10)
 

@@ -31,6 +31,7 @@ class MainEnergyReader(threading.Thread):
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(info_handler)
         self.logger.addHandler(error_handler)
+
         self.logger.addHandler(logging.StreamHandler())
 
         self.message_queue = Queue()
@@ -46,6 +47,11 @@ class MainEnergyReader(threading.Thread):
         self.debug = True if self.config["debug"] == "true" else False
         self.stop = False
 
+        if self.debug:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(formatter)
+            self.logger.addHandler(stream_handler)
+
     @staticmethod
     def load_config():
         with open("config.json") as config_file:
@@ -55,7 +61,7 @@ class MainEnergyReader(threading.Thread):
 
     def run(self):
         if self.local:
-            reader = Mocker(stop_event=self.stop_reader_event)
+            reader = Mocker(stop_event=self.stop_reader_event, logger=self.logger)
         else:
             reader = Reader(status_queue=self.status_queue, config=self.config, stop_event=self.stop_reader_event,
                             logger=self.logger)
