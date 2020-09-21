@@ -13,7 +13,7 @@ import time
 
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-info_handler = handlers.TimedRotatingFileHandler('reader.log', when='midnight', interval=1, backupCount=7)
+info_handler = handlers.TimedRotatingFileHandler('energy_reader.log', when='midnight', interval=1, backupCount=7)
 info_handler.setLevel(logging.INFO)
 info_handler.setFormatter(formatter)
 error_handler = handlers.RotatingFileHandler('error.log', maxBytes=5000, backupCount=3)

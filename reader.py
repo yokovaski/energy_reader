@@ -95,6 +95,6 @@ class Reader(threading.Thread):
             if not retry:
                 solar = self.read_solar(True)
 
-            self.logger.error(f'Could not read data from solar api: {self.solar_url}')
+            self.logger.error('Could not read data from solar api: {}'.format(self.solar_url))
 
             return solar
