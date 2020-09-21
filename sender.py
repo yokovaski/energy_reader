@@ -118,13 +118,17 @@ class Sender(threading.Thread):
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_ERROR,
                                            "Received unexpected status code from server: " + str(response.status_code))
 
+            self.store_messages_in_retry_queue(messages)
+
         except requests.exceptions.ConnectionError as e:
             self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
 
             self.connected = False
+            self.store_messages_in_retry_queue(messages)
 
-            for message in messages:
-                self.retry_data_queue.put(json.dumps(message))
+    def store_messages_in_retry_queue(self, messages):
+        for message in messages:
+            self.retry_data_queue.put(json.dumps(message))
 
     def send_message_to_listeners(self, status, error=None, description=None):
         message = dict()
