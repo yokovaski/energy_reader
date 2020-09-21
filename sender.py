@@ -86,7 +86,7 @@ class Sender(threading.Thread):
 
             if response.status_code == requests.codes.ok:
                 self.connected = True
-                self.logger.info(f'Connected to server running on {self.base_url}')
+                self.logger.info('Connected to server running on {}'.format(self.base_url))
 
         except requests.exceptions.ConnectionError as e:
             self.connected = False
@@ -117,7 +117,7 @@ class Sender(threading.Thread):
                 self.stop_event.set()
                 return
 
-            self.logger.error(f'Received unexpected status code from server: \'{response.status_code}\'')
+            self.logger.error('Received unexpected status code from server: \'{}\''.format(response.status_code))
 
             self.store_messages_in_retry_queue(messages)
 
