@@ -12,6 +12,8 @@ class Mocker(Thread):
     def __init__(self, stop_event):
         super().__init__()
 
+        self.daemon = True
+
         self.energy_data_queue = RedisQueue('normal')
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
@@ -21,7 +23,8 @@ class Mocker(Thread):
         self.total_solar = random.randint(1000, 5000)
         self.total_gas = random.randint(1000, 5000)
 
-    def get_default_message(self):
+    @staticmethod
+    def get_default_message():
         try:
             with open('default_message.json') as default_message_file:
                 default_message = json.load(default_message_file)

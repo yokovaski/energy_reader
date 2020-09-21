@@ -5,3 +5,4 @@ venv/
 env/
 .vscode/
 config.json
+reader.log

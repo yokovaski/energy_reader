@@ -1,6 +1,5 @@
 import datetime
 import threading
-from enums import Thread, Status, Error
 import time
 import requests
 import json
@@ -8,11 +7,15 @@ from dsmr_parser import telegram_specifications
 from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
 from redis_queue import RedisQueue
+import logging
 
 
 class Reader(threading.Thread):
-    def __init__(self, status_queue, config, stop_event):
+    def __init__(self, status_queue, config, stop_event, logger: logging.Logger):
         super().__init__()
+
+        self.daemon = True
+        self.logger = logger
 
         self.energy_data_queue = RedisQueue('normal')
         self.status_queue = status_queue
@@ -20,9 +23,10 @@ class Reader(threading.Thread):
         self.solar_ip = config['solar_ip']
         self.solar_url = self.solar_ip + config['solar_url']
         self.stop_event = stop_event
-        self.console_mode = True if config["console_mode"] == "true" else False
+        self.debug = True if config["debug"] == "true" else False
 
-    def init_reader(self):
+    @staticmethod
+    def init_reader():
         serial_reader = SerialReader(
             device="/dev/ttyUSB0",
             serial_settings=SERIAL_SETTINGS_V4,
@@ -32,22 +36,22 @@ class Reader(threading.Thread):
         return serial_reader
 
     def run(self):
-        self.send_message_to_listeners(Status.RUNNING, description='Reader has been started')
+        self.logger.info('Reader has been started')
         self.read()
 
     def read(self):
         for telegram in self.reader.read():
             energy_data = self.extract_data_from_telegram(telegram)
 
-            if self.console_mode:
-                self.send_message_to_listeners(Status.RUNNING, description=energy_data)
+            if self.debug:
+                self.logger.info(energy_data)
 
             self.energy_data_queue.put(json.dumps(energy_data))
 
             if self.stop_event.is_set():
                 break
 
-        self.send_message_to_listeners(Status.STOPPED, description='Reader has been stopped')
+        self.logger.info('Reader has been stopped')
 
     def extract_data_from_telegram(self, telegram):
         solar = self.read_solar()
@@ -75,7 +79,7 @@ class Reader(threading.Thread):
             "total": 0
         }
 
-        if str(self.solar_ip) is "":
+        if str(self.solar_ip) == "":
             return solar
 
         try:
@@ -91,19 +95,6 @@ class Reader(threading.Thread):
             if not retry:
                 solar = self.read_solar(True)
 
-            self.send_message_to_listeners(Status.RUNNING, Error.SOLAR_API, 'Could not read data from solar api: {}'.format(self.solar_url))
+            self.logger.error(f'Could not read data from solar api: {self.solar_url}')
 
             return solar
-
-    def send_message_to_listeners(self, status, error=None, description=None):
-        message = dict()
-        message["thread"] = Thread.READER
-        message["status"] = status
-
-        if error is not None:
-            message["error"] = error
-
-        if message is not None:
-            message["description"] = description
-
-        self.status_queue.put(message)

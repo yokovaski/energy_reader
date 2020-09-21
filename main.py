@@ -1,22 +1,38 @@
 #!/usr/bin/env python3
-
-from enums import Thread
-from enums import Status
-from enums import Error
+import signal
+import sys
 from queue import Queue
 from mocker import Mocker
 from reader import Reader
 from sender import Sender
-from _datetime import datetime
 import threading
 import json
+import logging
+import logging.handlers as handlers
 import time
-import sys
+
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+info_handler = handlers.TimedRotatingFileHandler('reader.log', when='midnight', interval=1, backupCount=7)
+info_handler.setLevel(logging.INFO)
+info_handler.setFormatter(formatter)
+error_handler = handlers.RotatingFileHandler('error.log', maxBytes=5000, backupCount=3)
+error_handler.setLevel(logging.ERROR)
+error_handler.setFormatter(formatter)
 
 
 class MainEnergyReader(threading.Thread):
     def __init__(self):
         super(MainEnergyReader, self).__init__()
+
+        self.daemon = True
+
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(info_handler)
+        self.logger.addHandler(error_handler)
+        self.logger.addHandler(logging.StreamHandler())
+
         self.message_queue = Queue()
         self.status_queue = Queue()
         self.stop_reader_event = threading.Event()
@@ -27,10 +43,11 @@ class MainEnergyReader(threading.Thread):
         self.solar_url = self.config["solar_url"]
         self.base_url = self.config["api_url"]
         self.local = True if self.config["local"] == "true" else False
-        self.console_mode = True if self.config["console_mode"] == "true" else False
+        self.debug = True if self.config["debug"] == "true" else False
         self.stop = False
 
-    def load_config(self):
+    @staticmethod
+    def load_config():
         with open("config.json") as config_file:
             config = json.load(config_file)
 
@@ -40,42 +57,25 @@ class MainEnergyReader(threading.Thread):
         if self.local:
             reader = Mocker(stop_event=self.stop_reader_event)
         else:
-            reader = Reader(status_queue=self.status_queue, config=self.config,
-                            stop_event=self.stop_reader_event)
+            reader = Reader(status_queue=self.status_queue, config=self.config, stop_event=self.stop_reader_event,
+                            logger=self.logger)
 
         reader.start()
 
-        sender = Sender(status_queue=self.status_queue,
-                        stop_event=self.stop_sender_event, config=self.config)
+        sender = Sender(status_queue=self.status_queue, stop_event=self.stop_sender_event, config=self.config,
+                        logger=self.logger)
 
         sender.start()
 
         while not self.stop:
-            while not self.status_queue.empty():
-                self.handle_status_message_of_thread(self.status_queue.get())
+            time.sleep(0.2)
 
-            time.sleep(1)
-
-        self.handle_status_message_of_thread('[MAIN] | Reading last messages from children before shutting down...')
-
-        # Handle messages that are still in the queue
-        while not self.status_queue.empty():
-            self.handle_status_message_of_thread(self.status_queue.get())
-
-        self.handle_status_message_of_thread('[MAIN] | Shutting down...')
-
-    def handle_status_message_of_thread(self, message):
-        log_message = '(UTC) {} | {}'.format(datetime.utcnow(), message)
-
-        if self.console_mode:
-            print(log_message)
-        else:
-            file = open('energy_reader.log', 'a')
-            file.write(log_message + "\n")
-            file.close()
+        self.logger.info('Shutting down...')
+        reader.join()
+        sender.join()
 
     def stop_all_threads(self):
-        self.handle_status_message_of_thread('[MAIN] | Stopping all threads...')
+        self.logger.info('Stopping all threads...')
         self.stop_reader_event.set()
         self.stop_sender_event.set()
         self.stop = True
@@ -90,3 +90,4 @@ if __name__ == '__main__':
             time.sleep(1)
     finally:
         energy_reader.stop_all_threads()
+        sys.exit()
