@@ -1,8 +1,8 @@
 .idea/
 energy_reader.log
 error.log
+sysout.log
 venv/
 env/
 .vscode/
 config.json
-reader.log
