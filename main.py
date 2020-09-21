@@ -32,8 +32,6 @@ class MainEnergyReader(threading.Thread):
         self.logger.addHandler(info_handler)
         self.logger.addHandler(error_handler)
 
-        self.logger.addHandler(logging.StreamHandler())
-
         self.message_queue = Queue()
         self.status_queue = Queue()
         self.stop_reader_event = threading.Event()
