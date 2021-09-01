@@ -6,11 +6,15 @@ import time
 import threading
 import requests
 import json
+import logging
 
 
 class Sender(threading.Thread):
-    def __init__(self, status_queue, stop_event, config):
+    def __init__(self, status_queue, stop_event, config, logger: logging.Logger):
         super(Sender, self).__init__()
+
+        self.daemon = True
+        self.logger = logger
 
         self.normal_data_queue = RedisQueue('normal')
         self.retry_data_queue = RedisQueue('retry')
@@ -19,14 +23,14 @@ class Sender(threading.Thread):
 
         self.base_url = config["api_url"]
         self.key = config["key"]
-        self.store_energy_url = self.base_url + "/v2/energy"
+        self.store_energy_url = self.base_url + "/api/v3/energy"
         self.backup_file = "backup"
-        self.console_mode = True if config["console_mode"] == "true" else False
+        self.debug = True if config["debug"] == "true" else False
 
         self.connected = False
 
     def run(self):
-        self.send_message_to_listeners(Status.RUNNING, description="Sender has been started")
+        self.logger.info('Sender has been started')
 
         while not self.stop_event.is_set():
             if not self.connected:
@@ -49,7 +53,7 @@ class Sender(threading.Thread):
 
             time.sleep(5)
 
-        self.send_message_to_listeners(Status.STOPPED,  description="Sender has been terminated")
+        self.logger.info('Sender has been terminated')
 
     def read_messages_from_retry_queue(self):
         retry_data = []
@@ -82,50 +86,47 @@ class Sender(threading.Thread):
 
             if response.status_code == requests.codes.ok:
                 self.connected = True
-                self.send_message_to_listeners(Status.RUNNING, description="Connected to server running on {}"
-                                               .format(self.base_url))
+                self.logger.info('Connected to server running on {}'.format(self.base_url))
 
         except requests.exceptions.ConnectionError as e:
             self.connected = False
-            self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not connect to the server")
+            self.logger.info('Could not connect to the server')
 
     def send_data_to_api(self, messages):
         headers = {
             'Content-type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'rpiKey': self.key
         }
 
         try:
-            response = requests.post(self.store_energy_url, data=json.dumps({'data': messages, "rpi_key": self.key}),
+            data = {
+                "metrics": messages
+            }
+
+            response = requests.post(self.store_energy_url, data=json.dumps(data),
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
-                if self.console_mode:
-                    self.send_message_to_listeners(Status.RUNNING, description="Succesfully stored energy data")
+                if self.debug:
+                    self.logger.info('Successfully stored energy data')
                 return
 
             if response.status_code == requests.codes.unauthorized:
-                self.send_message_to_listeners(Status.STOPPED, Error.UNAUTHORIZED,
-                                               "Could not authorize with given key")
+                self.logger.error('Could not authorize with given key')
                 self.stop_event.set()
+                return
+
+            self.logger.error('Received unexpected status code from server: \'{}\''.format(response.status_code))
+
+            self.store_messages_in_retry_queue(messages)
 
         except requests.exceptions.ConnectionError as e:
-            self.send_message_to_listeners(Status.RUNNING, Error.SERVER_UNREACHABLE, "Could not reach the server")
+            self.logger.error('Could not reach the server')
 
             self.connected = False
+            self.store_messages_in_retry_queue(messages)
 
-            for message in messages:
-                self.retry_data_queue.put(json.dumps(message))
-
-    def send_message_to_listeners(self, status, error=None, description=None):
-        message = dict()
-        message["thread"] = Thread.SENDER
-        message["status"] = status
-
-        if error is not None:
-            message["error"] = error
-
-        if message is not None:
-            message["description"] = description
-
-        self.status_queue.put(message)
+    def store_messages_in_retry_queue(self, messages):
+        for message in messages:
+            self.retry_data_queue.put(json.dumps(message))

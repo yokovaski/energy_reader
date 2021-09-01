@@ -1,17 +1,20 @@
+import logging
 from threading import Thread
 import copy
 import json
 import sys
 import random
 import time
-import queue
-from threading import Event
 from redis_queue import RedisQueue
+import datetime
 
 
 class Mocker(Thread):
-    def __init__(self, stop_event):
+    def __init__(self, stop_event, logger: logging.Logger):
         super().__init__()
+
+        self.daemon = True
+        self.logger = logger
 
         self.energy_data_queue = RedisQueue('normal')
         self.stop_event = stop_event
@@ -27,7 +30,7 @@ class Mocker(Thread):
             with open('default_message.json') as default_message_file:
                 default_message = json.load(default_message_file)
         except:
-            print('Something went wrong when trying to open default_message.json')
+            self.logger.error('Something went wrong when trying to open default_message.json')
             sys.exit()
 
         return default_message
@@ -35,7 +38,7 @@ class Mocker(Thread):
     def run(self):
         while not self.stop_event.is_set():
             message = self.build_mock_data()
-            print(message)
+            self.logger.info(message)
             self.energy_data_queue.put(json.dumps(message))
             time.sleep(10)
 
@@ -46,9 +49,9 @@ class Mocker(Thread):
         return energy_data
 
     def generate_mock_data(self, message):
-        message["mode"] = "1"
+        message["mode"] = 1
 
-        random_decider = random.randint(0,10000)
+        random_decider = random.randint(0, 10000)
 
         if random_decider < 6000:
             usage = random.randint(0, 2500)
@@ -57,40 +60,23 @@ class Mocker(Thread):
             redelivery = 0
         else:
             usage = 0
-            solar = random.randint(0,4000)
+            solar = random.randint(0, 4000)
             redelivery = random.randint(0, solar)
             self.total_redelivery = self.total_redelivery + int(redelivery / 100)
 
         self.total_solar = self.total_solar + int(solar / 100)
         self.total_gas = self.total_gas + int(random.randint(0, 110) / 100)
 
-        message['unix_timestamp'] = int(time.time())
-        message["usage_now"] = usage
-        message["redelivery_now"] = redelivery
-        message["solar_now"] = solar
-        message["usage_total_high"] = self.total_usage
-        message["redelivery_total_high"] = self.total_redelivery
-        message["usage_total_low"] = self.total_usage
-        message["redelivery_total_low"] = self.total_redelivery
-        message["solar_total"] = self.total_solar
-        message["usage_gas_now"] = 0
-        message["usage_gas_total"] = self.total_gas
+        message["usageNow"] = usage
+        message["redeliveryNow"] = redelivery
+        message["solarNow"] = solar
+        message["usageTotalHigh"] = self.total_usage
+        message["redeliveryTotalHigh"] = self.total_redelivery
+        message["usageTotalLow"] = self.total_usage
+        message["redeliveryTotalLow"] = self.total_redelivery
+        message["solarTotal"] = self.total_solar
+        message["usageGasNow"] = 0
+        message["usageGasTotal"] = self.total_gas
+        message["created"] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
         return message
-
-
-if __name__ == '__main__':
-    message_queue = queue.Queue()
-    event = Event()
-    mocker = Mocker(message_queue, event)
-    mocker.start()
-
-    try:
-        while True:
-            try:
-                data = message_queue.get(False)
-                print(data)
-            except queue.Empty:
-                time.sleep(1)
-    except KeyboardInterrupt:
-        event.set()
