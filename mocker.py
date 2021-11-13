@@ -36,11 +36,15 @@ class Mocker(Thread):
         return default_message
 
     def run(self):
+        self.logger.info('Mock reader has been started')
+
         while not self.stop_event.is_set():
             message = self.build_mock_data()
-            self.logger.info(message)
+            self.logger.debug(message)
             self.energy_data_queue.put(json.dumps(message))
             time.sleep(10)
+
+        self.logger.info('Mock reader has been stopped')
 
     def build_mock_data(self):
         message = copy.deepcopy(self.default_message)

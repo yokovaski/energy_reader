@@ -12,25 +12,11 @@ import logging.handlers as handlers
 import time
 
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-info_handler = handlers.TimedRotatingFileHandler('energy_reader.log', when='midnight', interval=1, backupCount=7)
-info_handler.setLevel(logging.INFO)
-info_handler.setFormatter(formatter)
-error_handler = handlers.RotatingFileHandler('error.log', maxBytes=5000, backupCount=3)
-error_handler.setLevel(logging.ERROR)
-error_handler.setFormatter(formatter)
-
-
 class MainEnergyReader(threading.Thread):
     def __init__(self):
         super(MainEnergyReader, self).__init__()
 
         self.daemon = True
-
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(info_handler)
-        self.logger.addHandler(error_handler)
 
         self.message_queue = Queue()
         self.status_queue = Queue()
@@ -45,10 +31,22 @@ class MainEnergyReader(threading.Thread):
         self.debug = True if self.config["debug"] == "true" else False
         self.stop = False
 
+        self.logger = logging.getLogger()
+
         if self.debug:
-            stream_handler = logging.StreamHandler()
-            stream_handler.setFormatter(formatter)
-            self.logger.addHandler(stream_handler)
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
+
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler = handlers.RotatingFileHandler('energy_reader.log', maxBytes=1048576, backupCount=5)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        self.logger.addHandler(stream_handler)
 
     @staticmethod
     def load_config():
