@@ -25,7 +25,6 @@ class Sender(threading.Thread):
         self.key = config["key"]
         self.store_energy_url = self.base_url + "/api/v3/energy"
         self.backup_file = "backup"
-        self.debug = True if config["debug"] == "true" else False
 
         self.connected = False
 
@@ -65,6 +64,9 @@ class Sender(threading.Thread):
             if len(retry_data) > 30:
                 break
 
+        if len(retry_data) > 0:
+            self.logger.debug(f'{len(retry_data)} message(s) are scheduled for retry.')
+
         return retry_data
 
     def read_messages_from_normal_queue(self):
@@ -90,7 +92,7 @@ class Sender(threading.Thread):
 
         except requests.exceptions.ConnectionError as e:
             self.connected = False
-            self.logger.info('Could not connect to the server')
+            self.logger.error('Could not connect to the server')
 
     def send_data_to_api(self, messages):
         headers = {
@@ -104,12 +106,13 @@ class Sender(threading.Thread):
                 "metrics": messages
             }
 
+            self.logger.debug(f'{len(messages)} energy message(s) will be send to the api')
+
             response = requests.post(self.store_energy_url, data=json.dumps(data),
                                      headers=headers)
 
             if response.status_code == requests.codes.created:
-                if self.debug:
-                    self.logger.info('Successfully stored energy data')
+                self.logger.debug('Successfully stored energy data')
                 return
 
             if response.status_code == requests.codes.unauthorized:
@@ -128,5 +131,7 @@ class Sender(threading.Thread):
             self.store_messages_in_retry_queue(messages)
 
     def store_messages_in_retry_queue(self, messages):
+        self.logger.debug(f'Storing {len(messages)} in de retry queue')
+
         for message in messages:
             self.retry_data_queue.put(json.dumps(message))

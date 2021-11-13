@@ -1,5 +1,5 @@
 .idea/
-energy_reader.log
+energy_reader.log*
 error.log
 sysout.log
 venv/

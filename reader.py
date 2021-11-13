@@ -42,10 +42,7 @@ class Reader(threading.Thread):
     def read(self):
         for telegram in self.reader.read():
             energy_data = self.extract_data_from_telegram(telegram)
-
-            if self.debug:
-                self.logger.info(energy_data)
-
+            self.logger.debug(energy_data)
             self.energy_data_queue.put(json.dumps(energy_data))
 
             if self.stop_event.is_set():
