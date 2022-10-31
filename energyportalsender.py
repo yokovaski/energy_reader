@@ -1,6 +1,3 @@
-from enums import Thread
-from enums import Status
-from enums import Error
 from redis_queue import RedisQueue
 import time
 import threading
@@ -9,16 +6,15 @@ import json
 import logging
 
 
-class Sender(threading.Thread):
-    def __init__(self, status_queue, stop_event, config, logger: logging.Logger):
-        super(Sender, self).__init__()
+class EnergyPortalSender(threading.Thread):
+    def __init__(self, stop_event, config, logger: logging.Logger):
+        super(EnergyPortalSender, self).__init__()
 
         self.daemon = True
         self.logger = logger
 
         self.normal_data_queue = RedisQueue('normal')
         self.retry_data_queue = RedisQueue('retry')
-        self.status_queue = status_queue
         self.stop_event = stop_event
 
         self.base_url = config["api_url"]

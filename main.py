@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import signal
 import sys
-from queue import Queue
+
+from domoticz_pusher import DomoticzPusher
 from mocker import Mocker
 from reader import Reader
-from sender import Sender
+from energyportalsender import EnergyPortalSender
 import threading
 import json
 import logging
 import logging.handlers as handlers
 import time
+
+from redis_pusher import RedisPusher
 
 
 class MainEnergyReader(threading.Thread):
@@ -18,8 +21,6 @@ class MainEnergyReader(threading.Thread):
 
         self.daemon = True
 
-        self.message_queue = Queue()
-        self.status_queue = Queue()
         self.stop_reader_event = threading.Event()
         self.stop_sender_event = threading.Event()
 
@@ -56,25 +57,32 @@ class MainEnergyReader(threading.Thread):
         return config
 
     def run(self):
+        domoticz_pusher = DomoticzPusher(config=self.config, logger=self.logger, stop_event=self.stop_reader_event)
+        domoticz_pusher.start()
+
+        read_handlers = [
+            # RedisPusher(logger=self.logger),
+            domoticz_pusher
+        ]
+
         if self.local:
-            reader = Mocker(stop_event=self.stop_reader_event, logger=self.logger)
+            reader = Mocker(stop_event=self.stop_reader_event, logger=self.logger, read_handlers=read_handlers)
         else:
-            reader = Reader(status_queue=self.status_queue, config=self.config, stop_event=self.stop_reader_event,
-                            logger=self.logger)
+            reader = Reader(config=self.config, stop_event=self.stop_reader_event, logger=self.logger,
+                            read_handlers=read_handlers)
 
         reader.start()
 
-        sender = Sender(status_queue=self.status_queue, stop_event=self.stop_sender_event, config=self.config,
-                        logger=self.logger)
-
-        sender.start()
+        # TODO: don't forget to enable this again
+        sender = EnergyPortalSender(stop_event=self.stop_sender_event, config=self.config, logger=self.logger)
+        # sender.start()
 
         while not self.stop:
             time.sleep(0.2)
 
         self.logger.info('Shutting down...')
         reader.join()
-        sender.join()
+        # sender.join()
 
     def stop_all_threads(self):
         self.logger.info('Stopping all threads...')
