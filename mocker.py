@@ -20,7 +20,7 @@ class Mocker(Thread):
 
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
-        self.read_handlers: List[ReadHandlerInterface] = read_handlers
+        self.read_handlers = read_handlers
         self.total_usage = random.randint(1000, 5000)
         self.total_redelivery = random.randint(1000, 5000)
         self.total_solar = random.randint(1000, 5000)
