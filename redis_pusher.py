@@ -9,7 +9,7 @@ from redis_queue import RedisQueue
 class RedisPusher(ReadHandlerInterface):
     def __init__(self, logger: logging.Logger):
         self.energy_data_queue = RedisQueue('normal')
-        self.logger: logging.Logger = logger
+        self.logger = logger
 
     def handle_read(self, data: dict) -> None:
         energy_data = copy.deepcopy(data)
