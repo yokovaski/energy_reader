@@ -93,7 +93,7 @@ class Mocker(Thread):
     def get_solar(self, solar) -> dict:
         self.total_solar = self.total_solar + int(solar / 100)
 
-        solar_data: dict = {
+        solar_data = {
             'dayEnergy': self.total_solar,
             'yearEnergy': self.total_solar,
             'totalEnergy': self.total_solar,
