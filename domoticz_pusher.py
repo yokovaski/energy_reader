@@ -8,7 +8,7 @@ from read_handler_interface import ReadHandlerInterface
 
 
 class DomoticzPusher(Thread, ReadHandlerInterface):
-    def __init__(self, config: dict, stop_event: threading.Event, logger: logging.Logger):
+    def __init__(self, config, stop_event, logger):
         super().__init__()
         
         self.queue = Queue()
@@ -22,7 +22,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.gas_device_name = 'p1Gas'
         self.gas_device_idx = -1
 
-    def handle_read(self, data: dict) -> None:
+    def handle_read(self, data) -> None:
         self.queue.put_nowait(data)
 
     def get_name(self) -> str:

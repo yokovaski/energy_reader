@@ -13,8 +13,7 @@ from redis_queue import RedisQueue
 
 
 class Reader(threading.Thread):
-    def __init__(self, config: dict, stop_event: threading.Event, logger: logging.Logger,
-                 read_handlers: List[ReadHandlerInterface]):
+    def __init__(self, config, stop_event, logger, read_handlers):
         super().__init__()
 
         self.daemon = True

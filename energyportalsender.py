@@ -7,7 +7,7 @@ import logging
 
 
 class EnergyPortalSender(threading.Thread):
-    def __init__(self, stop_event, config, logger: logging.Logger):
+    def __init__(self, stop_event, config, logger):
         super(EnergyPortalSender, self).__init__()
 
         self.daemon = True

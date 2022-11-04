@@ -12,7 +12,7 @@ import datetime
 
 
 class Mocker(Thread):
-    def __init__(self, stop_event, logger: logging.Logger, read_handlers: List[ReadHandlerInterface]):
+    def __init__(self, stop_event, logger, read_handlers):
         super().__init__()
 
         self.daemon = True
