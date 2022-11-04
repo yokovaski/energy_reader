@@ -1,6 +1,5 @@
 import copy
 import json
-import logging
 
 from read_handler_interface import ReadHandlerInterface
 from redis_queue import RedisQueue

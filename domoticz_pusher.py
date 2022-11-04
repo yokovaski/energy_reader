@@ -1,6 +1,4 @@
-import logging
 from threading import Thread
-import threading
 import time
 from queue import Queue
 import requests
@@ -22,10 +20,10 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.gas_device_name = 'p1Gas'
         self.gas_device_idx = -1
 
-    def handle_read(self, data) -> None:
+    def handle_read(self, data):
         self.queue.put_nowait(data)
 
-    def get_name(self) -> str:
+    def get_name(self):
         return 'DomoticzPusher'
 
     def run(self):
@@ -67,7 +65,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.electricity_device_idx = -1
         self.gas_device_idx = -1
 
-    def is_connected(self) -> bool:
+    def is_connected(self):
         if self.connected:
             return True
 
@@ -85,7 +83,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         else:
             return False
 
-    def try_find_idx_devices(self) -> bool:
+    def try_find_idx_devices(self):
         found_all_devices = True
 
         try:
@@ -114,7 +112,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
 
         return found_all_devices
 
-    def try_store_hardware(self) -> bool:
+    def try_store_hardware(self):
         hardware_name = 'EnergieZicht'
 
         try:
@@ -171,7 +169,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
             self.logger.error('Failed to store devices', exc_info=e)
             return False
 
-    def try_store_device(self, hardware_idx, name, sensor_type) -> str or None:
+    def try_store_device(self, hardware_idx, name, sensor_type):
         try:
             self.logger.info('Creating new domoticz sensor with name "{}"'.format(name))
 

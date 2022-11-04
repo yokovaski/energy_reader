@@ -1,14 +1,10 @@
 import datetime
-import logging
 import threading
 import time
 import requests
 from dsmr_parser import telegram_specifications
 from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
-from typing import List
-
-from read_handler_interface import ReadHandlerInterface
 from redis_queue import RedisQueue
 
 

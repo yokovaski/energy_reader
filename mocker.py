@@ -1,13 +1,9 @@
-import logging
 from threading import Thread
 import copy
 import json
 import sys
 import random
 import time
-
-from read_handler_interface import ReadHandlerInterface
-from typing import List
 import datetime
 
 
@@ -90,7 +86,7 @@ class Mocker(Thread):
 
         return message
 
-    def get_solar(self, solar) -> dict:
+    def get_solar(self, solar):
         self.total_solar = self.total_solar + int(solar / 100)
 
         solar_data = {

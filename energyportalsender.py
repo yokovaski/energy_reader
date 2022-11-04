@@ -3,7 +3,6 @@ import time
 import threading
 import requests
 import json
-import logging
 
 
 class EnergyPortalSender(threading.Thread):
