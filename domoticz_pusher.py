@@ -39,7 +39,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 continue
 
             try:
-                data: dict = self.queue.get_nowait()
+                data = self.queue.get_nowait()
 
                 s_value = f'{data["usageTotalHigh"]};{data["usageTotalLow"]};{data["redeliveryTotalHigh"]};' \
                           f'{data["redeliveryTotalLow"]};{data["usageNow"]};{data["redeliveryNow"]}'
