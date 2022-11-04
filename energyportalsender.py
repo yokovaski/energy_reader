@@ -116,7 +116,8 @@ class EnergyPortalSender(threading.Thread):
                 self.stop_event.set()
                 return
 
-            self.logger.error('Received unexpected status code from server: \'{}\''.format(response.status_code))
+            self.logger.error(f'Received unexpected status code \'{response.status_code}\' with response: '
+                              f'{response.json()}')
 
             self.store_messages_in_retry_queue(messages)
 
