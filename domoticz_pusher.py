@@ -11,7 +11,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
     def __init__(self, config: dict, stop_event: threading.Event, logger: logging.Logger):
         super().__init__()
         
-        self.queue: Queue = Queue()
+        self.queue = Queue()
         self.stop_event = stop_event
         self.logger = logger
         self.connected = False
