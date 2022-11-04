@@ -1,4 +1,6 @@
+import logging
 from threading import Thread
+import threading
 import time
 from queue import Queue
 import requests
@@ -6,10 +8,10 @@ from read_handler_interface import ReadHandlerInterface
 
 
 class DomoticzPusher(Thread, ReadHandlerInterface):
-    def __init__(self, config, stop_event, logger):
+    def __init__(self, config: dict, stop_event: threading.Event, logger: logging.Logger):
         super().__init__()
         
-        self.queue = Queue()
+        self.queue: Queue = Queue()
         self.stop_event = stop_event
         self.logger = logger
         self.connected = False
@@ -20,10 +22,10 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.gas_device_name = 'p1Gas'
         self.gas_device_idx = -1
 
-    def handle_read(self, data):
+    def handle_read(self, data: dict) -> None:
         self.queue.put_nowait(data)
 
-    def get_name(self):
+    def get_name(self) -> str:
         return 'DomoticzPusher'
 
     def run(self):
@@ -37,20 +39,19 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 continue
 
             try:
-                data = self.queue.get_nowait()
+                data: dict = self.queue.get_nowait()
 
-                s_value = '{};{};{};{};{};{}'.format(data["usageTotalHigh"], data["usageTotalLow"],
-                                                     data["redeliveryTotalHigh"], data["redeliveryTotalLow"],
-                                                     data["usageNow"], data["redeliveryNow"])
-                response = requests.get('{}/json.htm?type=command&param=udevice&idx={}&nvalue=0&svalue={}'.format(
-                    self.domoticz_url, self.electricity_device_idx, s_value))
+                s_value = f'{data["usageTotalHigh"]};{data["usageTotalLow"]};{data["redeliveryTotalHigh"]};' \
+                          f'{data["redeliveryTotalLow"]};{data["usageNow"]};{data["redeliveryNow"]}'
+                response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=udevice&'
+                                        f'idx={self.electricity_device_idx}&nvalue=0&svalue={s_value}')
                 response_json = response.json()
 
                 if response_json['status'] != 'OK':
                     raise Exception("Failed to push electricity")
 
-                response = requests.get('{}/json.htm?type=command&param=udevice&idx={}&nvalue=0&svalue={}'.format(
-                    self.domoticz_url, self.gas_device_idx, data["usageGasTotal"]))
+                response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=udevice&'
+                                        f'idx={self.gas_device_idx}&nvalue=0&svalue={data["usageGasTotal"]}')
                 response_json = response.json()
 
                 if response_json['status'] != 'OK':
@@ -65,11 +66,11 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.electricity_device_idx = -1
         self.gas_device_idx = -1
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         if self.connected:
             return True
 
-        response = requests.get('{}/json.htm?type=command&param=getversion'.format(self.domoticz_url))
+        response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=getversion')
         response_data = response.json()
 
         if response.ok and response_data['status'] == 'OK':
@@ -83,15 +84,15 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         else:
             return False
 
-    def try_find_idx_devices(self):
+    def try_find_idx_devices(self) -> bool:
         found_all_devices = True
 
         try:
-            response = requests.get('{}/json.htm?type=command&param=devices_list'.format(self.domoticz_url))
+            response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=devices_list')
             response_json = response.json()
 
             if response.ok and response_json['status'] != 'OK':
-                raise Exception('Get devices returned {}'.format(response_json["status"]))
+                raise Exception(f'Get devices returned {response_json["status"]}')
 
             devices = response_json['result'] if 'result' in response_json else []
             electricity_device = next((d for d in devices if d['name'] == self.electricity_device_name), None)
@@ -112,15 +113,15 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
 
         return found_all_devices
 
-    def try_store_hardware(self):
+    def try_store_hardware(self) -> bool:
         hardware_name = 'EnergieZicht'
 
         try:
-            response = requests.get('{}/json.htm?type=hardware'.format(self.domoticz_url))
+            response = requests.get(f'{self.domoticz_url}/json.htm?type=hardware')
             response_json = response.json()
 
             if not response_json['status'] == 'OK':
-                raise Exception('Get hardware returned {}'.format(response_json["status"]))
+                raise Exception(f'Get hardware returned {response_json["status"]}')
 
             dummy_device_idx = None
             hardware = response_json['result'] if 'result' in response_json else []
@@ -140,13 +141,12 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
 
             if dummy_device_idx is None:
                 self.logger.info('Creating new domoticz dummy device with name "EnergieZicht"')
-                response = requests.get(
-                    '{}/json.htm?type=command&param=addhardware&htype=15&port=1&name={}&enabled=true'.format(
-                        self.domoticz_url, hardware_name))
+                response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=addhardware&htype=15&port=1'
+                                        f'&name={hardware_name}&enabled=true')
                 response_json = response.json()
 
                 if not response_json['status'] == 'OK':
-                    raise Exception('Get hardware returned {}'.format(response_json["status"]))
+                    raise Exception(f'Get hardware returned {response_json["status"]}')
 
                 dummy_device_idx = response_json['idx']
 
@@ -169,19 +169,19 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
             self.logger.error('Failed to store devices', exc_info=e)
             return False
 
-    def try_store_device(self, hardware_idx, name, sensor_type):
+    def try_store_device(self, hardware_idx, name, sensor_type) -> str or None:
         try:
-            self.logger.info('Creating new domoticz sensor with name "{}"'.format(name))
+            self.logger.info(f'Creating new domoticz sensor with name "{name}"')
 
-            response = requests.get('{}/json.htm?type=createdevice&idx={}&sensorname={}&sensormappedtype={}'.format(
-                self.domoticz_url, hardware_idx, name, sensor_type))
+            response = requests.get(f'{self.domoticz_url}/json.htm?type=createdevice&idx={hardware_idx}'
+                                    f'&sensorname={name}&sensormappedtype={sensor_type}')
             response_json = response.json()
 
             if not response_json['status'] == 'OK':
-                raise Exception('Create device returned {} when creating sensor with type {}'.format(
-                    response_json["status"], sensor_type))
+                raise Exception(f'Create device returned {response_json["status"]} when creating sensor with type '
+                                f'{sensor_type}')
 
             return response_json['idx']
         except Exception as e:
-            self.logger.error('Failed to create device {}'.format(name), exc_info=e)
+            self.logger.error(f'Failed to create device {name}', exc_info=e)
             return None

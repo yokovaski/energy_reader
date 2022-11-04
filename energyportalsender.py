@@ -3,10 +3,11 @@ import time
 import threading
 import requests
 import json
+import logging
 
 
 class EnergyPortalSender(threading.Thread):
-    def __init__(self, stop_event, config, logger):
+    def __init__(self, stop_event, config, logger: logging.Logger):
         super(EnergyPortalSender, self).__init__()
 
         self.daemon = True
@@ -60,7 +61,7 @@ class EnergyPortalSender(threading.Thread):
                 break
 
         if len(retry_data) > 0:
-            self.logger.debug('{} message(s) are scheduled for retry.'.format(len(retry_data)))
+            self.logger.debug(f'{len(retry_data)} message(s) are scheduled for retry.')
 
         return retry_data
 
@@ -101,7 +102,7 @@ class EnergyPortalSender(threading.Thread):
                 "metrics": messages
             }
 
-            self.logger.debug('{} energy message(s) will be send to the api'.format(len(messages)))
+            self.logger.debug(f'{len(messages)} energy message(s) will be send to the api')
 
             response = requests.post(self.store_energy_url, data=json.dumps(data),
                                      headers=headers)
@@ -115,8 +116,8 @@ class EnergyPortalSender(threading.Thread):
                 self.stop_event.set()
                 return
 
-            self.logger.error('Received unexpected status code \'{}\' with response: {}'.format(response.status_code,
-                                                                                                response.json()))
+            self.logger.error(f'Received unexpected status code \'{response.status_code}\' with response: '
+                              f'{response.json()}')
 
             self.store_messages_in_retry_queue(messages)
 
@@ -127,7 +128,7 @@ class EnergyPortalSender(threading.Thread):
             self.store_messages_in_retry_queue(messages)
 
     def store_messages_in_retry_queue(self, messages):
-        self.logger.debug('Storing {} in de retry queue'.format(len(messages)))
+        self.logger.debug(f'Storing {len(messages)} in de retry queue')
 
         for message in messages:
             self.retry_data_queue.put(json.dumps(message))

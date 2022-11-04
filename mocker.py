@@ -1,14 +1,18 @@
+import logging
 from threading import Thread
 import copy
 import json
 import sys
 import random
 import time
+
+from read_handler_interface import ReadHandlerInterface
+from typing import List
 import datetime
 
 
 class Mocker(Thread):
-    def __init__(self, stop_event, logger, read_handlers):
+    def __init__(self, stop_event, logger: logging.Logger, read_handlers: List[ReadHandlerInterface]):
         super().__init__()
 
         self.daemon = True
@@ -16,7 +20,7 @@ class Mocker(Thread):
 
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
-        self.read_handlers = read_handlers
+        self.read_handlers: List[ReadHandlerInterface] = read_handlers
         self.total_usage = random.randint(1000, 5000)
         self.total_redelivery = random.randint(1000, 5000)
         self.total_solar = random.randint(1000, 5000)
@@ -86,10 +90,10 @@ class Mocker(Thread):
 
         return message
 
-    def get_solar(self, solar):
+    def get_solar(self, solar) -> dict:
         self.total_solar = self.total_solar + int(solar / 100)
 
-        solar_data = {
+        solar_data: dict = {
             'dayEnergy': self.total_solar,
             'yearEnergy': self.total_solar,
             'totalEnergy': self.total_solar,

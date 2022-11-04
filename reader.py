@@ -1,20 +1,25 @@
 import datetime
+import logging
 import threading
 import time
 import requests
 from dsmr_parser import telegram_specifications
 from dsmr_parser.clients import SerialReader, SERIAL_SETTINGS_V4
 from dsmr_parser import obis_references
+from typing import List
+
+from read_handler_interface import ReadHandlerInterface
 from redis_queue import RedisQueue
 
 
 class Reader(threading.Thread):
-    def __init__(self, config, stop_event, logger, read_handlers):
+    def __init__(self, config: dict, stop_event: threading.Event, logger: logging.Logger,
+                 read_handlers: List[ReadHandlerInterface]):
         super().__init__()
 
         self.daemon = True
-        self.logger = logger
-        self.read_handlers = read_handlers
+        self.logger: logging.Logger = logger
+        self.read_handlers: List[ReadHandlerInterface] = read_handlers
 
         self.energy_data_queue = RedisQueue('normal')
         self.reader = self.init_reader()
@@ -43,13 +48,13 @@ class Reader(threading.Thread):
             self.logger.debug(energy_data)
 
             for read_handler in self.read_handlers:
-                name = 'Unknown'
+                name: str = 'Unknown'
 
                 try:
                     name = read_handler.get_name()
                     read_handler.handle_read(energy_data)
                 except Exception:
-                    self.logger.error('Failed to push data to read handler {}'.format(name))
+                    self.logger.error(f'Failed to push data to read handler {name}')
 
             if self.stop_event.is_set():
                 break
