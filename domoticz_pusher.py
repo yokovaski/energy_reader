@@ -41,8 +41,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
             try:
                 data = self.queue.get_nowait()
 
-                s_value = f'{data["usageTotalHigh"]};{data["usageTotalLow"]};{data["redeliveryTotalHigh"]};' \
-                          f'{data["redeliveryTotalLow"]};{data["usageNow"]};{data["redeliveryNow"]}'
+                s_value = f'{data["usageTotalHigh"]};{data["usageTotalLow"]};{data["redeliveryTotalHigh"]};{data["redeliveryTotalLow"]};{data["usageNow"]};{data["redeliveryNow"]}'
                 response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=udevice&'
                                         f'idx={self.electricity_device_idx}&nvalue=0&svalue={s_value}')
                 response_json = response.json()
