@@ -48,7 +48,7 @@ class Reader(threading.Thread):
             self.logger.debug(energy_data)
 
             for read_handler in self.read_handlers:
-                name: str = 'Unknown'
+                name = 'Unknown'
 
                 try:
                     name = read_handler.get_name()
