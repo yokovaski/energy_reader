@@ -18,8 +18,8 @@ class Reader(threading.Thread):
         super().__init__()
 
         self.daemon = True
-        self.logger: logging.Logger = logger
-        self.read_handlers: List[ReadHandlerInterface] = read_handlers
+        self.logger = logger
+        self.read_handlers = read_handlers
 
         self.energy_data_queue = RedisQueue('normal')
         self.reader = self.init_reader()
