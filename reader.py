@@ -54,7 +54,7 @@ class Reader(threading.Thread):
                     name = read_handler.get_name()
                     read_handler.handle_read(energy_data)
                 except Exception:
-                    self.logger.error(f'Failed to push data to read handler {name}')
+                    self.logger.error('Failed to push data to read handler {}'.format(name))
 
             if self.stop_event.is_set():
                 break
