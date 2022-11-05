@@ -37,7 +37,9 @@ class MainEnergyReader(threading.Thread):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.rotating_file_handler = handlers.RotatingFileHandler('energy_reader.log', maxBytes=1048576, backupCount=5)
         self.rotating_file_handler.setLevel(logging.DEBUG)
+        self.rotating_file_handler.setFormatter(formatter)
         self.stream_handler = logging.StreamHandler()
+        self.stream_handler.setLevel(logging.DEBUG)
         self.stream_handler.setFormatter(formatter)
 
         self.logger = self.create_logger('main')
