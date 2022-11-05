@@ -5,21 +5,22 @@ import json
 import sys
 import random
 import time
-from redis_queue import RedisQueue
+
+from read_handler_interface import ReadHandlerInterface
+from typing import List
 import datetime
 
 
 class Mocker(Thread):
-    def __init__(self, stop_event, logger: logging.Logger):
+    def __init__(self, stop_event, logger: logging.Logger, read_handlers: List[ReadHandlerInterface]):
         super().__init__()
 
         self.daemon = True
         self.logger = logger
 
-        self.energy_data_queue = RedisQueue('normal')
         self.stop_event = stop_event
         self.default_message = self.get_default_message()
-
+        self.read_handlers: List[ReadHandlerInterface] = read_handlers
         self.total_usage = random.randint(1000, 5000)
         self.total_redelivery = random.randint(1000, 5000)
         self.total_solar = random.randint(1000, 5000)
@@ -41,7 +42,10 @@ class Mocker(Thread):
         while not self.stop_event.is_set():
             message = self.build_mock_data()
             self.logger.debug(message)
-            self.energy_data_queue.put(json.dumps(message))
+
+            for handler in self.read_handlers:
+                handler.handle_read(message)
+
             time.sleep(10)
 
         self.logger.info('Mock reader has been stopped')
@@ -68,19 +72,36 @@ class Mocker(Thread):
             redelivery = random.randint(0, solar)
             self.total_redelivery = self.total_redelivery + int(redelivery / 100)
 
-        self.total_solar = self.total_solar + int(solar / 100)
         self.total_gas = self.total_gas + int(random.randint(0, 110) / 100)
+        solar_data = self.get_solar(solar)
 
         message["usageNow"] = usage
         message["redeliveryNow"] = redelivery
-        message["solarNow"] = solar
+        message["solarNow"] = int(solar_data['pac'])
         message["usageTotalHigh"] = self.total_usage
         message["redeliveryTotalHigh"] = self.total_redelivery
         message["usageTotalLow"] = self.total_usage
         message["redeliveryTotalLow"] = self.total_redelivery
-        message["solarTotal"] = self.total_solar
+        message["solarTotal"] = int(solar_data['totalEnergy'])
         message["usageGasNow"] = 0
         message["usageGasTotal"] = self.total_gas
         message["created"] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+        message['allSolar'] = solar_data
 
         return message
+
+    def get_solar(self, solar) -> dict:
+        self.total_solar = self.total_solar + int(solar / 100)
+
+        solar_data: dict = {
+            'dayEnergy': self.total_solar,
+            'yearEnergy': self.total_solar,
+            'totalEnergy': self.total_solar,
+            'pac': solar,
+            'udc': int(random.randint(0, 100)),
+            'uac': int(random.randint(0, 100)),
+            'idc': int(random.randint(0, 100)),
+            'iac': int(random.randint(0, 100)),
+        }
+
+        return solar_data

@@ -4,5 +4,6 @@
   "debug":"false",
   "local":"false",
   "api_url":"",
-  "key":""
+  "key":"",
+  "domoticz_url": ""
 }
