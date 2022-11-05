@@ -5,5 +5,6 @@
   "local":"false",
   "api_url":"",
   "key":"",
-  "domoticz_url": ""
+  "domoticz_url": "",
+  "domoticz_dummy_name": "EnergieZicht"
 }

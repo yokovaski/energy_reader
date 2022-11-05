@@ -16,10 +16,11 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.logger = logger
         self.connected = False
         self.domoticz_url = config['domoticz_url']
+        self.dummy_device_name = config['domoticz_dummy_name']
 
-        self.electricity_device_name = 'p1Electricity'
+        self.electricity_device_name = f'{self.dummy_device_name}_p1Electricity'
         self.electricity_device_idx = -1
-        self.gas_device_name = 'p1Gas'
+        self.gas_device_name = f'{self.dummy_device_name}_p1Gas'
         self.gas_device_idx = -1
 
     def handle_read(self, data: dict) -> None:
@@ -114,8 +115,6 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         return found_all_devices
 
     def try_store_hardware(self) -> bool:
-        hardware_name = 'EnergieZicht'
-
         try:
             response = requests.get(f'{self.domoticz_url}/json.htm?type=hardware')
             response_json = response.json()
@@ -133,16 +132,16 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 if device['Type'] != 15:
                     continue
 
-                if device['Name'] != hardware_name:
+                if device['Name'] != self.dummy_device_name:
                     continue
 
                 dummy_device_idx = device['idx']
                 break
 
             if dummy_device_idx is None:
-                self.logger.info('Creating new domoticz dummy device with name "EnergieZicht"')
+                self.logger.info(f'Creating new domoticz dummy device with name "{self.dummy_device_name}"')
                 response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=addhardware&htype=15&port=1'
-                                        f'&name={hardware_name}&enabled=true')
+                                        f'&name={self.dummy_device_name}&enabled=true')
                 response_json = response.json()
 
                 if not response_json['status'] == 'OK':
