@@ -2,7 +2,7 @@ import logging
 from threading import Thread
 import threading
 import time
-from queue import Queue
+from multiprocessing import Queue
 import requests
 from read_handler_interface import ReadHandlerInterface
 
