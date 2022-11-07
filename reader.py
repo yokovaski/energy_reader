@@ -97,6 +97,15 @@ class Reader(threading.Thread):
             solar['dayEnergy'] = solar_data['YEAR_ENERGY']['Value']
             solar['yearEnergy'] = solar_data['DAY_ENERGY']['Value']
             solar['totalEnergy'] = solar_data['TOTAL_ENERGY']['Value']
+
+            if 'PAC' not in solar_data:
+                solar['pac'] = 0
+                solar['udc'] = 0
+                solar['uac'] = 0
+                solar['idc'] = 0
+                solar['iac'] = 0
+                return solar
+
             solar['pac'] = solar_data['PAC']['Value']
             solar['udc'] = solar_data['UDC']['Value']
             solar['uac'] = solar_data['UAC']['Value']
@@ -106,10 +115,10 @@ class Reader(threading.Thread):
             return solar
         except requests.exceptions.ConnectTimeout:
             return solar
-        except Exception:
+        except Exception as e:
             if not retry:
                 solar = self.read_solar(True)
             else:
-                self.logger.error('Could not read data from solar api: {}'.format(self.solar_url))
+                self.logger.error('Could not read data from solar api: {}'.format(self.solar_url), exc_info=e)
 
             return solar

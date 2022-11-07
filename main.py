@@ -32,6 +32,7 @@ class MainEnergyReader(threading.Thread):
         self.local = True if self.config["local"] == "true" else False
         self.debug = True if self.config["debug"] == "true" else False
         self.push_to_domoticz = True if self.valid_uri(self.config["domoticz_url"]) else False
+        self.push_solar = True if self.valid_uri(self.config["solar_ip"]) else False
         self.stop = False
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -60,7 +61,7 @@ class MainEnergyReader(threading.Thread):
 
         if self.push_to_domoticz:
             domoticz_pusher = DomoticzPusher(config=self.config, logger=self.create_logger('DomoticzPusher'),
-                                             stop_event=self.stop_reader_event)
+                                             stop_event=self.stop_reader_event, push_solar=self.push_solar)
             domoticz_pusher.start()
             read_handlers.append(domoticz_pusher)
 
