@@ -84,8 +84,12 @@ class Reader(threading.Thread):
 
     def read_solar(self, retry=False):
         solar = {
-            "pac": 0,
-            "totalEnergy": 0
+            'pac': 0,
+            'totalEnergy': 0,
+            'udc': 0,
+            'uac': 0,
+            'idc': 0,
+            'iac': 0,
         }
 
         if str(self.solar_ip) == "":
@@ -99,11 +103,6 @@ class Reader(threading.Thread):
             solar['totalEnergy'] = solar_data['TOTAL_ENERGY']['Value']
 
             if 'PAC' not in solar_data:
-                solar['pac'] = 0
-                solar['udc'] = 0
-                solar['uac'] = 0
-                solar['idc'] = 0
-                solar['iac'] = 0
                 return solar
 
             solar['pac'] = solar_data['PAC']['Value']
