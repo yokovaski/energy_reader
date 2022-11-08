@@ -17,36 +17,69 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.connected = False
         self.domoticz_url = config['domoticz_url']
         self.dummy_device_name = config['domoticz_dummy_name']
+        self.push_solar = push_solar
+        self.devices = {}
 
+        self.set_devices_to_default()
+
+    def set_devices_to_default(self):
         self.devices = {
             'electricity': {
-                'name': f'{self.dummy_device_name}_p1Electricity',
+                'name': f'P1 Elektriciteit ({self.dummy_device_name})',
                 'sensor_type': '0xFA01',
                 'idx': -1,
-                'get_data': lambda data: f'{data["usageTotalHigh"]};{data["usageTotalLow"]};'
+                'get_data': lambda device, data: f'{data["usageTotalHigh"]};{data["usageTotalLow"]};'
                                          f'{data["redeliveryTotalHigh"]};{data["redeliveryTotalLow"]};'
                                          f'{data["usageNow"]};{data["redeliveryNow"]}',
                 'should_send': lambda data: True
             },
             'gas': {
-                'name': f'{self.dummy_device_name}_p1Gas',
+                'name': f'P1 Gas ({self.dummy_device_name})',
                 'sensor_type': '0xFB02',
                 'idx': -1,
-                'get_data': lambda data: f'{data["usageGasTotal"]}',
+                'get_data': lambda device, data: f'{data["usageGasTotal"]}',
                 'should_send': lambda data: True
             }
         }
 
-        if push_solar:
+        if self.push_solar:
             self.devices['solar_general'] = {
                 'name': f'Zonnepanelen ({self.dummy_device_name})',
                 'sensor_type': '0xF31D',
                 'idx': -1,
-                'get_data': lambda data: f'{data["solarNow"]};{data["solarTotal"]}',
+                'get_data': lambda device, data: self.get_solar_data_and_store_total(device, data),
                 'change_device_url': lambda name, idx: f'/json.htm?type=setused&idx={idx}&name={name}'
-                                                    f'&description=&switchtype=4&EnergyMeterMode=0&customimage=0'
-                                                    f'&used=true',
-                'should_send': lambda data: data['solarTotal'] > 0
+                                                       f'&description=&switchtype=4&EnergyMeterMode=0&customimage=0'
+                                                       f'&used=true',
+                'last_total': 0
+            }
+
+            self.devices['solar_iac'] = {
+                'name': f'IAC ({self.dummy_device_name})',
+                'sensor_type': '0xF317',
+                'idx': -1,
+                'get_data': lambda device, data: f'{data["allSolar"]["iac"]}'
+            }
+
+            self.devices['solar_idc'] = {
+                'name': f'IDC ({self.dummy_device_name})',
+                'sensor_type': '0xF317',
+                'idx': -1,
+                'get_data': lambda device, data: f'{data["allSolar"]["idc"]}'
+            }
+
+            self.devices['solar_uac'] = {
+                'name': f'UAC ({self.dummy_device_name})',
+                'sensor_type': '0xF308',
+                'idx': -1,
+                'get_data': lambda device, data: f'{data["allSolar"]["uac"]}'
+            }
+
+            self.devices['solar_udc'] = {
+                'name': f'UDC ({self.dummy_device_name})',
+                'sensor_type': '0xF308',
+                'idx': -1,
+                'get_data': lambda device, data: f'{data["allSolar"]["udc"]}'
             }
 
     def handle_read(self, data: dict) -> None:
@@ -76,10 +109,9 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 self.reset()
 
     def push_data_to_domoticz(self, device, data):
-        if not device['should_send'](data):
-            return
+        s_value = device['get_data'](device, data)
 
-        s_value = device['get_data'](data)
+        self.logger.debug(f'Sending data to domoticz for {device["name"]}: {s_value}')
         response = requests.get(f'{self.domoticz_url}/json.htm?type=command&param=udevice&'
                                 f'idx={device["idx"]}&nvalue=0&svalue={s_value}')
         if not response.ok:
@@ -90,10 +122,21 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         if response_json['status'] != 'OK':
             raise Exception(f'Failed to push {device["name"]}, received status: {response_json["status"]}')
 
+    @staticmethod
+    def get_solar_data_and_store_total(device, data):
+        solar_total = data['solarTotal']
+
+        # Use the last known total when the given total is 0 (solar system is down)
+        if solar_total == 0:
+            solar_total = device['last_total']
+        else:
+            device['last_total'] = solar_total
+
+        return f'{data["solarNow"]};{solar_total}'
+
     def reset(self):
         self.connected = False
-        self.electricity_device_idx = -1
-        self.gas_device_idx = -1
+        self.set_devices_to_default()
 
     def is_connected(self) -> bool:
         if self.connected:

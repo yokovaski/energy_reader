@@ -96,7 +96,7 @@ class Mocker(Thread):
         solar_data: dict = {
             'dayEnergy': self.total_solar,
             'yearEnergy': self.total_solar,
-            'totalEnergy': self.total_solar,
+            'totalEnergy': random.choice([self.total_solar, self.total_solar, self.total_solar, 0]),
             'pac': solar,
             'udc': int(random.randint(0, 100)),
             'uac': int(random.randint(0, 100)),
