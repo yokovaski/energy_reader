@@ -85,6 +85,8 @@ class Reader(threading.Thread):
     def read_solar(self, retry=False):
         solar = {
             'pac': 0,
+            'dayEnergy': 0,
+            'yearEnergy': 0,
             'totalEnergy': 0,
             'udc': 0,
             'uac': 0,
