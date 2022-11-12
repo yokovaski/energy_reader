@@ -155,7 +155,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         last_known = 0
 
         if not queue.empty():
-            last_known = int(queue.get().decode('utf-8'))
+            last_known = float(queue.get().decode('utf-8'))
 
         if value > 0:
             queue.put(value)
