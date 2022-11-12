@@ -100,8 +100,8 @@ class Reader(threading.Thread):
         try:
             time.sleep(0.85)
             solar_data = requests.get(url=self.solar_url, timeout=2).json()['Body']['Data']
-            solar['dayEnergy'] = solar_data['YEAR_ENERGY']['Value']
-            solar['yearEnergy'] = solar_data['DAY_ENERGY']['Value']
+            solar['dayEnergy'] = solar_data['DAY_ENERGY']['Value']
+            solar['yearEnergy'] = solar_data['YEAR_ENERGY']['Value']
             solar['totalEnergy'] = solar_data['TOTAL_ENERGY']['Value']
 
             if 'PAC' not in solar_data:
