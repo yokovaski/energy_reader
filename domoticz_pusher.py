@@ -5,6 +5,7 @@ import time
 from multiprocessing import Queue
 import requests
 from read_handler_interface import ReadHandlerInterface
+from redis_queue import RedisQueue
 
 
 class DomoticzPusher(Thread, ReadHandlerInterface):
@@ -31,14 +32,12 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 'get_data': lambda device, data: f'{data["usageTotalHigh"]};{data["usageTotalLow"]};'
                                          f'{data["redeliveryTotalHigh"]};{data["redeliveryTotalLow"]};'
                                          f'{data["usageNow"]};{data["redeliveryNow"]}',
-                'should_send': lambda data: True
             },
             'gas': {
                 'name': f'P1 Gas ({self.dummy_device_name})',
                 'sensor_type': '0xFB02',
                 'idx': -1,
                 'get_data': lambda device, data: f'{data["usageGasTotal"]}',
-                'should_send': lambda data: True
             }
         }
 
@@ -47,11 +46,12 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 'name': f'Zonnepanelen ({self.dummy_device_name})',
                 'sensor_type': '0xF31D',
                 'idx': -1,
-                'get_data': lambda device, data: self.get_solar_data_and_store_total(device, data),
+                'get_data': lambda device, data: f'{data["solarNow"]};'
+                                                 f'{self.get_data_with_queue(device, data["solarTotal"])}',
                 'change_device_url': lambda name, idx: f'/json.htm?type=setused&idx={idx}&name={name}'
                                                        f'&description=&switchtype=4&EnergyMeterMode=0&customimage=0'
                                                        f'&used=true',
-                'last_total': 0
+                'queue': RedisQueue('solar_general')
             }
 
             self.devices['solar_iac'] = {
@@ -80,6 +80,33 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 'sensor_type': '0xF308',
                 'idx': -1,
                 'get_data': lambda device, data: f'{data["allSolar"]["udc"]}'
+            }
+
+            self.devices['solar_day_total'] = {
+                'name': f'Zon Dag ({self.dummy_device_name})',
+                'sensor_type': '0xF31F',
+                'sensor_options': '&sensoroptions=1;KW',
+                'idx': -1,
+                'get_data': lambda device, data: f'{self.transform(device, data["allSolar"]["dayEnergy"], "KW")}',
+                'queue': RedisQueue('solar_day_total')
+            }
+
+            self.devices['solar_year_total'] = {
+                'name': f'Zon Jaar ({self.dummy_device_name})',
+                'sensor_type': '0xF31F',
+                'sensor_options': '&sensoroptions=1;KW',
+                'idx': -1,
+                'get_data': lambda device, data: f'{self.transform(device, data["allSolar"]["yearEnergy"], "KW")}',
+                'queue': RedisQueue('solar_year_total')
+            }
+
+            self.devices['solar_total'] = {
+                'name': f'Zon Totaal ({self.dummy_device_name})',
+                'sensor_type': '0xF31F',
+                'sensor_options': '&sensoroptions=1;MW',
+                'idx': -1,
+                'get_data': lambda device, data: f'{self.transform(device, data["allSolar"]["totalEnergy"], "MW")}',
+                'queue': RedisQueue('solar_total')
             }
 
     def handle_read(self, data: dict) -> None:
@@ -123,16 +150,32 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
             raise Exception(f'Failed to push {device["name"]}, received status: {response_json["status"]}')
 
     @staticmethod
-    def get_solar_data_and_store_total(device, data):
-        solar_total = data['solarTotal']
+    def get_data_with_queue(device, value):
+        queue = device['queue']
+        last_known = 0
 
-        # Use the last known total when the given total is 0 (solar system is down)
-        if solar_total == 0:
-            solar_total = device['last_total']
-        else:
-            device['last_total'] = solar_total
+        if not queue.empty():
+            last_known = int(queue.get().decode('utf-8'))
 
-        return f'{data["solarNow"]};{solar_total}'
+        if value > 0:
+            queue.put(value)
+            return value
+
+        if last_known > 0:
+            queue.put(last_known)
+
+        return last_known
+
+    def transform(self, device, value, unit):
+        if 'queue' in device:
+            value = self.get_data_with_queue(device, value)
+
+        if unit == 'MW':
+            return f'{round(value / 1000_000, 3)}'
+        elif unit == 'KW':
+            return f'{round(value / 1000, 3)}'
+
+        return f'{value}'
 
     def reset(self):
         self.connected = False
@@ -252,8 +295,13 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
 
             self.logger.info(f'Creating new domoticz sensor with name "{name}"')
 
-            response = requests.get(f'{self.domoticz_url}/json.htm?type=createdevice&idx={hardware_idx}'
-                                    f'&sensorname={name}&sensormappedtype={sensor_type}')
+            create_url = f'{self.domoticz_url}/json.htm?type=createdevice&idx={hardware_idx}&sensorname={name}' \
+                         f'&sensormappedtype={sensor_type}'
+
+            if 'sensor_options' in device:
+                create_url += device['sensor_options']
+
+            response = requests.get(create_url)
 
             if not response.ok:
                 raise Exception(f'Received unexpected status code on creating device {name}: {response.status_code}')
