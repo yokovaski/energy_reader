@@ -12,15 +12,16 @@ class EnergyPortalSender(threading.Thread):
 
         self.daemon = True
         self.logger = logger
-
-        self.normal_data_queue = RedisQueue('normal')
-        self.retry_data_queue = RedisQueue('retry')
         self.stop_event = stop_event
 
         self.base_url = config["api_url"]
         self.key = config["key"]
+        self.name = config["name"]
         self.store_energy_url = self.base_url + "/api/v3/energy"
         self.backup_file = "backup"
+
+        self.normal_data_queue = RedisQueue(f'normal_{self.name}')
+        self.retry_data_queue = RedisQueue(f'retry_{self.name}')
 
         self.connected = False
 
