@@ -53,8 +53,11 @@ class MainEnergyReader(threading.Thread):
         return config
 
     def run(self):
+        energy_portal_configs = self.get_energy_portal_configs()
+        redis_queue_names = list(map(lambda c: c['name'], energy_portal_configs))
+
         read_handlers = [
-            RedisPusher(logger=self.create_logger('RedisPusher')),
+            RedisPusher(logger=self.create_logger('RedisPusher'), queue_names=redis_queue_names),
         ]
 
         domoticz_pusher = None
@@ -74,17 +77,19 @@ class MainEnergyReader(threading.Thread):
 
         reader.start()
 
-        # TODO: don't forget to enable this again
-        sender = EnergyPortalSender(stop_event=self.stop_sender_event, config=self.config,
-                                    logger=self.create_logger('EnergyPortalSender'))
-        sender.start()
+        senders = self.get_senders(energy_portal_configs=energy_portal_configs)
+
+        for sender in senders:
+            sender.start()
 
         while not self.stop:
             time.sleep(0.2)
 
         self.logger.info('Shutting down...')
         reader.join()
-        sender.join()
+
+        for sender in senders:
+            sender.join()
 
         if domoticz_pusher is not None:
             domoticz_pusher.join()
@@ -115,6 +120,28 @@ class MainEnergyReader(threading.Thread):
         logger.addHandler(self.stream_handler)
 
         return logger
+
+    def get_energy_portal_configs(self) -> list[dict]:
+        if 'energy_portals' not in self.config:
+            return [
+                {
+                    'name': 'default',
+                    'api_url': self.config['api_url'],
+                    'key': self.config['key']
+                }
+            ]
+
+        return self.config['energy_portals']
+
+    def get_senders(self, energy_portal_configs: list[dict]) -> list[EnergyPortalSender]:
+        senders = []
+
+        for config in energy_portal_configs:
+            sender = EnergyPortalSender(stop_event=self.stop_sender_event, config=config,
+                                        logger=self.create_logger(f'EnergyPortalSender ({config["name"]})'))
+            senders.append(sender)
+
+        return senders
 
 
 if __name__ == '__main__':

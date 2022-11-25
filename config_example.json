@@ -3,8 +3,13 @@
   "solar_url":"/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=CommonInverterData",
   "debug":"false",
   "local":"false",
-  "api_url":"",
-  "key":"",
   "domoticz_url": "",
-  "domoticz_dummy_name": "EnergieZicht"
+  "domoticz_dummy_name": "EnergieZicht",
+  "energy_portals": [
+    {
+      "name": "example",
+      "api_url":"https://your.energy.portal",
+      "key":"example_key"
+    }
+  ]
 }
