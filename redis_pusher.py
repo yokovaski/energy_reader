@@ -7,7 +7,7 @@ from redis_queue import RedisQueue
 
 
 class RedisPusher(ReadHandlerInterface):
-    def __init__(self, logger: logging.Logger, queue_names: list[str]):
+    def __init__(self, logger: logging.Logger, queue_names):
         self.redis_queues = []
 
         for queue_name in queue_names:

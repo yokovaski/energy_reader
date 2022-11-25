@@ -121,7 +121,7 @@ class MainEnergyReader(threading.Thread):
 
         return logger
 
-    def get_energy_portal_configs(self) -> list[dict]:
+    def get_energy_portal_configs(self):
         if 'energy_portals' not in self.config:
             return [
                 {
@@ -133,7 +133,7 @@ class MainEnergyReader(threading.Thread):
 
         return self.config['energy_portals']
 
-    def get_senders(self, energy_portal_configs: list[dict]) -> list[EnergyPortalSender]:
+    def get_senders(self, energy_portal_configs):
         senders = []
 
         for config in energy_portal_configs:
