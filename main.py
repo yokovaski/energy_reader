@@ -28,7 +28,6 @@ class MainEnergyReader(threading.Thread):
         self.config = self.load_config()
         self.solar_ip = self.config["solar_ip"]
         self.solar_url = self.config["solar_url"]
-        self.base_url = self.config["api_url"]
         self.local = True if self.config["local"] == "true" else False
         self.debug = True if self.config["debug"] == "true" else False
         self.push_to_domoticz = True if self.valid_uri(self.config["domoticz_url"]) else False
