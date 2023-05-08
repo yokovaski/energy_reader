@@ -219,7 +219,12 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 domoticz_device = next((d for d in devices if d['name'] == device['name']), None)
 
                 if domoticz_device is not None:
-                    device['idx'] = domoticz_device['value']
+                    if 'value' in domoticz_device:
+                        device['idx'] = domoticz_device['value']
+                    elif 'idx' in domoticz_device:
+                        device['idx'] = domoticz_device['idx']
+                    else:
+                        raise Exception('Encountered unknown domoticz_device format')
                 else:
                     found_all_devices = False
 
