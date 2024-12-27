@@ -2,4 +2,4 @@
 
 cd /home/pi/energy_reader
 source venv/bin/activate
-python main.py &>> sysout.log
+python main.py &> energy_reader.log
