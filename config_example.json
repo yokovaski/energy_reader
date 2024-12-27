@@ -16,7 +16,7 @@
     {
       "name": "example",
       "enabled": false,
-      "host": "mqtt://localhost",
+      "host": "homeassistant.local",
       "port": 1883,
       "username": "",
       "password": "",
