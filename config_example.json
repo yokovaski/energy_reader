@@ -11,5 +11,16 @@
       "api_url":"https://your.energy.portal",
       "key":"example_key"
     }
+  ],
+  "mqtt": [
+    {
+      "name": "example",
+      "enabled": false,
+      "host": "mqtt://localhost",
+      "port": 1883,
+      "username": "",
+      "password": "",
+      "topic": "energiezicht"
+    }
   ]
 }

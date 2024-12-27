@@ -14,6 +14,7 @@ class EnergyPortalSender(threading.Thread):
         self.logger = logger
         self.stop_event = stop_event
 
+        self.enabled = config["enabled"]
         self.base_url = config["api_url"]
         self.key = config["key"]
         self.name = config["name"]
@@ -26,6 +27,10 @@ class EnergyPortalSender(threading.Thread):
         self.connected = False
 
     def run(self):
+        if not self.enabled:
+            self.logger.info('Sender is disabled')
+            return
+
         self.logger.info('Sender has been started')
 
         while not self.stop_event.is_set():

@@ -10,3 +10,4 @@ redis==3.5.3
 requests==2.26.0
 tailer==0.4.1
 urllib3==1.26.7
+paho-mqtt~=2.1.0

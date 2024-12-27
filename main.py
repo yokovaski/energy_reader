@@ -4,6 +4,8 @@ import sys
 
 from domoticz_pusher import DomoticzPusher
 from mocker import Mocker
+from mqtt_publisher import MqttPublisher
+from read_handler_interface import ReadHandlerInterface
 from reader import Reader
 from energyportalsender import EnergyPortalSender
 import threading
@@ -55,7 +57,7 @@ class MainEnergyReader(threading.Thread):
         energy_portal_configs = self.get_energy_portal_configs()
         redis_queue_names = list(map(lambda c: c['name'], energy_portal_configs))
 
-        read_handlers = [
+        read_handlers: list[ReadHandlerInterface] = [
             RedisPusher(logger=self.create_logger('RedisPusher'), queue_names=redis_queue_names),
         ]
 
@@ -66,6 +68,8 @@ class MainEnergyReader(threading.Thread):
                                              stop_event=self.stop_reader_event, push_solar=self.push_solar)
             domoticz_pusher.start()
             read_handlers.append(domoticz_pusher)
+
+        self.register_mqtt_publishers(read_handlers=read_handlers)
 
         if self.local:
             reader = Mocker(stop_event=self.stop_reader_event, logger=self.create_logger('Mocker'),
@@ -132,7 +136,7 @@ class MainEnergyReader(threading.Thread):
 
         return self.config['energy_portals']
 
-    def get_senders(self, energy_portal_configs):
+    def get_senders(self, energy_portal_configs) -> list[EnergyPortalSender]:
         senders = []
 
         for config in energy_portal_configs:
@@ -141,6 +145,15 @@ class MainEnergyReader(threading.Thread):
             senders.append(sender)
 
         return senders
+
+    def register_mqtt_publishers(self, read_handlers: list[ReadHandlerInterface]):
+        mqtt_configs = self.config['mqtt']
+
+        for config in mqtt_configs:
+            publisher = MqttPublisher(stop_event=self.stop_sender_event, config=config,
+                                        logger=self.create_logger(f'MQTT Publisher ({config["name"]})'))
+            publisher.start()
+            read_handlers.append(publisher)
 
 
 if __name__ == '__main__':
