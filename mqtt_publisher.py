@@ -85,12 +85,18 @@ class MqttPublisher(Thread, ReadHandlerInterface):
 
         return False
 
-    def publish(self, topic, value):
+    def publish(self, topic, parent_key, value):
         # Check if value is a dictionary
         if isinstance(value, dict):
             for key, value in value.items():
-                self.publish(topic + '/' + key, value)
+                self.publish(topic + '/' + key, key, value)
         else:
+            if parent_key == 'usageGasTotal':
+                float_value = float(value)
+                float_value = float_value / 1000
+                self.client.publish(topic, float(float_value))
+                return
+
             # Check if value is a float
             if isinstance(value, float):
                 self.client.publish(topic, float(value))
