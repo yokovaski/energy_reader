@@ -29,12 +29,16 @@ class MqttPublisher(Thread, ReadHandlerInterface):
     def handle_read(self, data: dict) -> None:
         self.queue.put_nowait(data)
 
+    def get_name(self) -> str:
+        return f'MqttPublisher {self.mqtt_name}'
+
     def run(self):
         if not self.enabled:
             self.logger.info('MQTT Publisher is disabled')
             return
 
         self.logger.info(f'MQTT Publisher {self.mqtt_name} has been started')
+        time_sent = time.time()
 
         while not self.stop_event.is_set():
             if self.queue.empty():
@@ -44,6 +48,12 @@ class MqttPublisher(Thread, ReadHandlerInterface):
             if not self.is_connected():
                 time.sleep(5)
                 continue
+
+            # Check if the time since the last message is more than 10 seconds to avoid flooding the MQTT broker
+            if time.time() - time_sent < 10:
+                continue
+
+            time_sent = time.time()
 
             try:
                 data: dict = self.queue.get_nowait()
@@ -58,7 +68,7 @@ class MqttPublisher(Thread, ReadHandlerInterface):
                     self.logger.error(f'Failed to disconnect from MQTT broker {self.mqtt_name}', exc_info=e)
 
 
-    def is_connected(self) -> bool:
+    def is_connected(self):
         if self.connected:
             return True
 

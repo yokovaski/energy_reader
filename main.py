@@ -136,7 +136,7 @@ class MainEnergyReader(threading.Thread):
 
         return self.config['energy_portals']
 
-    def get_senders(self, energy_portal_configs) -> list[EnergyPortalSender]:
+    def get_senders(self, energy_portal_configs):
         senders = []
 
         for config in energy_portal_configs:
@@ -146,7 +146,7 @@ class MainEnergyReader(threading.Thread):
 
         return senders
 
-    def register_mqtt_publishers(self, read_handlers: list[ReadHandlerInterface]):
+    def register_mqtt_publishers(self, read_handlers):
         mqtt_configs = self.config['mqtt']
 
         for config in mqtt_configs:
