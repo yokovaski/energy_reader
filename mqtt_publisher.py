@@ -67,6 +67,8 @@ class MqttPublisher(Thread, ReadHandlerInterface):
                 except Exception as e:
                     self.logger.error(f'Failed to disconnect from MQTT broker {self.mqtt_name}', exc_info=e)
 
+        self.logger.info(f'MQTT Publisher {self.mqtt_name} has been terminated')
+
 
     def is_connected(self):
         if self.connected:
