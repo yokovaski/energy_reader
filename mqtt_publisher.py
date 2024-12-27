@@ -57,7 +57,7 @@ class MqttPublisher(Thread, ReadHandlerInterface):
 
             try:
                 data: dict = self.queue.get_nowait()
-                self.publish(self.mqtt_topic, data)
+                self.publish(self.mqtt_topic, self.mqtt_topic, data)
             except Exception as e:
                 self.logger.error(f'Failed to push data to MQTT broker {self.mqtt_name}', exc_info=e)
                 self.connected = False
