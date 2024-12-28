@@ -51,13 +51,15 @@ class MqttPublisher(Thread, ReadHandlerInterface):
 
             # Check if the time since the last message is more than 10 seconds to avoid flooding the MQTT broker
             if time.time() - time_sent < 10:
-                continue
+                while not self.queue.empty():
+                    self.queue.get_nowait()
 
-            time_sent = time.time()
+                continue
 
             try:
                 data: dict = self.queue.get_nowait()
                 self.publish(self.mqtt_topic, self.mqtt_topic, data)
+                time_sent = time.time()
             except Exception as e:
                 self.logger.error(f'Failed to push data to MQTT broker {self.mqtt_name}', exc_info=e)
                 self.connected = False
@@ -68,7 +70,6 @@ class MqttPublisher(Thread, ReadHandlerInterface):
                     self.logger.error(f'Failed to disconnect from MQTT broker {self.mqtt_name}', exc_info=e)
 
         self.logger.info(f'MQTT Publisher {self.mqtt_name} has been terminated')
-
 
     def is_connected(self):
         if self.connected:
