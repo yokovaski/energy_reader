@@ -27,6 +27,7 @@ class Reader(threading.Thread):
         self.solar_url = self.solar_ip + config['solar_url']
         self.stop_event = stop_event
         self.debug = True if config["debug"] == "true" else False
+        self.last_read_time = 0
 
     @staticmethod
     def init_reader():
@@ -44,6 +45,14 @@ class Reader(threading.Thread):
 
     def read(self):
         for telegram in self.reader.read():
+            actual_read_time = time.time()
+
+            # Only read every 10 seconds
+            if actual_read_time - self.last_read_time < 10:
+                continue
+
+            self.last_read_time = actual_read_time
+
             energy_data = self.extract_data_from_telegram(telegram)
             self.logger.debug(energy_data)
 
