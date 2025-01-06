@@ -48,7 +48,7 @@ class Reader(threading.Thread):
             actual_read_time = time.time()
 
             # Only read every 10 seconds
-            if actual_read_time - self.last_read_time < 10:
+            if actual_read_time - self.last_read_time < 9.8:
                 continue
 
             self.last_read_time = actual_read_time
