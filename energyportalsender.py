@@ -18,6 +18,7 @@ class EnergyPortalSender(threading.Thread):
         self.base_url = config["api_url"]
         self.key = config["key"]
         self.name = config["name"]
+        self.max_batch_size = config["max_batch_size"]
         self.store_energy_url = self.base_url + "/api/v3/energy"
         self.backup_file = "backup"
 
@@ -63,7 +64,7 @@ class EnergyPortalSender(threading.Thread):
             retry_message = self.retry_data_queue.get()
             retry_data.append(json.loads(retry_message.decode('utf-8')))
 
-            if len(retry_data) > 30:
+            if len(retry_data) > self.max_batch_size:
                 break
 
         if len(retry_data) > 0:
@@ -78,7 +79,7 @@ class EnergyPortalSender(threading.Thread):
             normal_message = self.normal_data_queue.get()
             normal_data.append(json.loads(normal_message.decode('utf-8')))
 
-            if len(normal_data) > 30:
+            if len(normal_data) > self.max_batch_size:
                 break
 
         return normal_data
