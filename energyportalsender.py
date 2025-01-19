@@ -35,25 +35,28 @@ class EnergyPortalSender(threading.Thread):
         self.logger.info('Sender has been started')
 
         while not self.stop_event.is_set():
-            if not self.connected:
-                self.connect_to_api()
+            try:
+                if not self.connected:
+                    self.connect_to_api()
 
-            while self.connected:
-                retry_data = self.read_messages_from_retry_queue()
+                while self.connected:
+                    retry_data = self.read_messages_from_retry_queue()
 
-                if len(retry_data) > 0:
-                    self.send_data_to_api(retry_data)
-                    break
+                    if len(retry_data) > 0:
+                        self.send_data_to_api(retry_data)
+                        break
 
-                normal_data = self.read_messages_from_normal_queue()
+                    normal_data = self.read_messages_from_normal_queue()
 
-                if len(normal_data) > 0:
-                    self.send_data_to_api(normal_data)
-                    break
+                    if len(normal_data) > 0:
+                        self.send_data_to_api(normal_data)
+                        break
 
-                time.sleep(1)
+                    time.sleep(1)
 
-            time.sleep(5)
+                time.sleep(5)
+            except Exception as e:
+                self.logger.error('Failed to send data', exc_info=e)
 
         self.logger.info('Sender has been terminated')
 
