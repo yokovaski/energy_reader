@@ -86,6 +86,24 @@ class MainEnergyReader(threading.Thread):
             sender.start()
 
         while not self.stop:
+            stop = False
+
+            if not reader.is_alive():
+                self.logger.error('Reader thread is dead, exit application')
+                stop = True
+
+            if domoticz_pusher is not None and not domoticz_pusher.is_alive():
+                self.logger.error('Domoticz pusher thread is dead, exit application')
+                stop = True
+
+            for sender in senders:
+                if not sender.is_alive():
+                    self.logger.error(f'Sender thread {sender.name} is dead, exit application')
+                    stop = True
+
+            if stop:
+                break
+
             time.sleep(0.2)
 
         self.logger.info('Shutting down...')
