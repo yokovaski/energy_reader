@@ -41,22 +41,22 @@ class MqttPublisher(Thread, ReadHandlerInterface):
         time_sent = time.time()
 
         while not self.stop_event.is_set():
-            if self.queue.empty():
-                time.sleep(1)
-                continue
-
-            if not self.is_connected():
-                time.sleep(5)
-                continue
-
-            # Check if the time since the last message is more than 10 seconds to avoid flooding the MQTT broker
-            if time.time() - time_sent < 10:
-                while not self.queue.empty():
-                    self.queue.get_nowait()
-
-                continue
-
             try:
+                if self.queue.empty():
+                    time.sleep(1)
+                    continue
+
+                if not self.is_connected():
+                    time.sleep(5)
+                    continue
+
+                # Check if the time since the last message is more than 10 seconds to avoid flooding the MQTT broker
+                if time.time() - time_sent < 10:
+                    while not self.queue.empty():
+                        self.queue.get_nowait()
+
+                    continue
+
                 data: dict = self.queue.get_nowait()
                 self.publish(self.mqtt_topic, self.mqtt_topic, data)
                 time_sent = time.time()
