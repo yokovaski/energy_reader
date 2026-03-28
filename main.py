@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import signal
 import sys
 
@@ -104,7 +105,8 @@ class MainEnergyReader(threading.Thread):
             if stop:
                 break
 
-            time.sleep(0.2)
+            self.validate_activity(read_handlers)
+            time.sleep(1)
 
         self.logger.info('Shutting down...')
         reader.join()
@@ -173,6 +175,18 @@ class MainEnergyReader(threading.Thread):
             publisher.start()
             read_handlers.append(publisher)
 
+    def validate_activity(self, read_handlers):
+        for handler in read_handlers:
+            seconds_since_last_run_time = handler.seconds_since_last_run_time()
+            
+            if seconds_since_last_run_time is None:
+                continue
+            
+            if seconds_since_last_run_time > 60:
+                self.logger.error(f'{handler.get_name()} has not run in the last 60 seconds. Crash to restart.')
+                os._exit(1)
+            
+            self.logger.debug(f'{handler.get_name()} last ran {handler.seconds_since_last_run_time()} seconds ago.')
 
 if __name__ == '__main__':
     energy_reader = MainEnergyReader()

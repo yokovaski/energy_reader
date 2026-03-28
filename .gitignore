@@ -5,4 +5,5 @@ sysout.log
 venv/
 env/
 .vscode/
+__pycache__/
 config.json

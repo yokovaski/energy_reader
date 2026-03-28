@@ -22,3 +22,13 @@ sudo rm energy_reader.log
 source venv/bin/activate
 python main.py
 ```
+
+## Missing dependencies
+
+### ModuleNotFoundError: No module named 'distutils'
+
+This seems to occur with python > 3.10. To fix this, install the `setuptools` package:
+
+```bash
+pip install setuptools
+```

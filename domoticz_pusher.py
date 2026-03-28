@@ -20,6 +20,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
         self.dummy_device_name = config['domoticz_dummy_name']
         self.push_solar = push_solar
         self.devices = {}
+        self.last_run = None
 
         self.set_devices_to_default()
 
@@ -115,6 +116,12 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
     def get_name(self) -> str:
         return 'DomoticzPusher'
 
+    def seconds_since_last_run_time(self) -> float:
+        if self.last_run is None:
+            return None
+
+        return time.time() - self.last_run
+
     def run(self):
         while not self.stop_event.is_set():
             if self.queue.empty():
@@ -131,6 +138,7 @@ class DomoticzPusher(Thread, ReadHandlerInterface):
                 for device in self.devices.values():
                     self.push_data_to_domoticz(device, data)
 
+                self.last_run = time.time()
             except Exception as e:
                 self.logger.error('Failed to push data to Domoticz', exc_info=e)
                 self.reset()

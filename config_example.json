@@ -7,9 +7,10 @@
   "domoticz_dummy_name": "EnergieZicht",
   "energy_portals": [
     {
+      "enabled": false,
       "name": "example",
-      "api_url":"https://your.energy.portal",
-      "key":"example_key",
+      "api_url":"http://energy.example",
+      "key":"secret",
       "max_batch_size": 20
     }
   ],
