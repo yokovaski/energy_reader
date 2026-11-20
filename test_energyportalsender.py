@@ -93,6 +93,16 @@ class SendTests(SenderTestCase):
         self.sender.send_data_to_api([{'n': 1}])
         self.assertEqual(1, self.sender.retry_data_queue.qsize())
 
+    def test_non_json_error_page_is_retried_later(self):
+        # a restarting portal (502 from nginx) answers with HTML
+        page = response(502)
+        page.json.side_effect = ValueError('Expecting value')
+        page.text = '<html>502 Bad Gateway</html>'
+        self.post.return_value = page
+        self.sender.send_data_to_api([{'n': 1}, {'n': 2}])
+        self.assertEqual(2, self.sender.retry_data_queue.qsize())
+        self.assertIn('502 Bad Gateway', self.sender.logger.error.call_args[0][0])
+
     def test_unreachable_disconnects_and_is_retried_later(self):
         self.post.side_effect = requests.exceptions.ConnectionError()
         self.sender.connected = True

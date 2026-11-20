@@ -126,8 +126,9 @@ class EnergyPortalSender(threading.Thread):
                 self.stop_event.set()
                 return
 
+            # .text, not .json(): a restarting portal answers with HTML, and a parse error here lost the batch
             self.logger.error(f'Received unexpected status code \'{response.status_code}\' with response: '
-                              f'{response.json()}')
+                              f'{response.text[:500]}')
 
             self.store_messages_in_retry_queue(messages)
 

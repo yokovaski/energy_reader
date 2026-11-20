@@ -36,6 +36,7 @@ def response(status_code=200, body=None):
     r.status_code = status_code
     r.ok = status_code < 400
     r.json.return_value = body if body is not None else {}
+    r.text = json.dumps(r.json.return_value)
     return r
 
 
