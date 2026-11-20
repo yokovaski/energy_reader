@@ -34,7 +34,8 @@ class MqttPublisher(Thread, ReadHandlerInterface):
         return time.time() - self.last_run
 
     def handle_read(self, data: dict) -> None:
-        self.queue.put_nowait(data)
+        # extraSolar is for the energy portal only; Home Assistant reads that system itself
+        self.queue.put_nowait({k: v for k, v in data.items() if k != 'extraSolar'})
 
     def get_name(self) -> str:
         return f'MqttPublisher {self.mqtt_name}'

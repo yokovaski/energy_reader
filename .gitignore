@@ -7,3 +7,7 @@ env/
 .vscode/
 __pycache__/
 config.json
+ha_token*.txt
+extra_solar_state.json*
+.coverage
+htmlcov/
