@@ -3,6 +3,7 @@ import json
 import logging
 import time
 
+from extra_solar import ExtraSolar, STATE_FILE
 from read_handler_interface import ReadHandlerInterface
 from redis_queue import RedisQueue
 
@@ -16,10 +17,12 @@ class RedisPusher(ReadHandlerInterface):
 
         self.logger: logging.Logger = logger
         self.last_run = None
+        self.extra_solar = ExtraSolar(STATE_FILE, logger)
 
     def handle_read(self, data: dict) -> None:
         energy_data = copy.deepcopy(data)
         energy_data.pop('allSolar')
+        self.extra_solar.add_to(energy_data)
 
         for redis_queue in self.redis_queues:
             try:

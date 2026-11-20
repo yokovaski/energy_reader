@@ -25,6 +25,8 @@ class Reader(threading.Thread):
         self.reader = self.init_reader()
         self.solar_ip = config['solar_ip']
         self.solar_url = self.solar_ip + config['solar_url']
+        self.extra_solar_url = config.get('extra_solar_url', '')
+        self.extra_solar_ok = True
         self.stop_event = stop_event
         self.debug = True if config["debug"] == "true" else False
         self.last_read_time = 0
@@ -89,7 +91,31 @@ class Reader(threading.Thread):
             'allSolar': solar
         }
 
+        if self.extra_solar_url:
+            data['extraSolar'] = self.read_extra_solar()
+
         return data
+
+    def read_extra_solar(self):
+        """Second solar system behind a HomeWizard kWh meter (local API v1). None when it cannot be read."""
+        try:
+            # Short timeout: this runs in the loop that reads the serial port
+            meter = requests.get(url=self.extra_solar_url, timeout=1).json()
+            extra = {
+                'pac': max(0, int(round(-meter['active_power_w']))),  # production is negative on this meter
+                'totalEnergy': int(round(meter['total_power_export_kwh'] * 1000)),
+            }
+        except Exception as e:
+            # Log only changes, not every 10 seconds while the meter is down
+            if self.extra_solar_ok:
+                self.logger.warning(f'Could not read extra solar from {self.extra_solar_url}: {e}')
+            self.extra_solar_ok = False
+            return None
+
+        if not self.extra_solar_ok:
+            self.logger.info(f'Extra solar from {self.extra_solar_url} can be read again')
+        self.extra_solar_ok = True
+        return extra
 
     def read_solar(self, retry=False):
         solar = {

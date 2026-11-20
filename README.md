@@ -13,3 +13,7 @@
 * `sudo systemctl start energy-reader.service`
 
 Check if the service is running with: `sudo systemctl status energy-reader`
+## Tests
+The tests use `unittest` and `unittest.mock`; hardware, Redis, MQTT and HTTP are mocked, but the packages from `requirements.txt` must be installed (use the venv).
+* `python3 -m unittest discover -p 'test_*.py'`
+* Coverage: `pip install coverage`, then `coverage run -m unittest discover -p 'test_*.py' && coverage report`
